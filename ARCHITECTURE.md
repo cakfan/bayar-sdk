@@ -212,6 +212,8 @@ type PaymentErrorCode =
 - **Core**: tidak pernah generate error provider-specific, hanya expose tipe dan util (`isRetryable(err)`, `isPaymentSDKError(err)`).
 - **Consumer**: selalu bisa `catch (err) { if (err instanceof PaymentSDKError) ... }` tanpa peduli provider mana yang dipakai.
 
+> **Multi-copy robustness**: `isPaymentSDKError(err)` tidak hanya mengandalkan `instanceof`. Kalau consumer kebetulan punya dua salinan `@bayar-sdk/core` (duplikasi dependency), `instanceof` terhadap class yang sama bisa gagal walau secara struktural errornya identik. Guard ini juga memeriksa `err.name === "PaymentSDKError"` sebagai fallback duck-typing sehingga error yang dibungkus/re-thrown lintas salinan tetap terdeteksi. Nama class itu sendiri didefinisikan literal `"PaymentSDKError"` (lihat §4.1) sehingga aman dijadikan sentinel.
+
 ### 4.3 Retry policy
 
 - `retryable: true` hanya untuk error kategori transient (`PROVIDER_RATE_LIMITED`, `PROVIDER_UNAVAILABLE`, timeout jaringan).

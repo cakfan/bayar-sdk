@@ -63,7 +63,11 @@ export class PaymentSDKError extends Error {
 }
 
 export function isPaymentSDKError(err: unknown): err is PaymentSDKError {
-	return err instanceof PaymentSDKError;
+	if (!(err instanceof Error)) return false;
+	// Fallback duck-typing: kalau consumer punya dua salinan @bayar-sdk/core,
+	// instanceof terhadap class ini bisa gagal walau errornya struktural identik
+	// (lihat ARCHITECTURE.md §4.2). name class ini literal "PaymentSDKError".
+	return err.name === "PaymentSDKError";
 }
 
 export function isRetryable(err: unknown): boolean {

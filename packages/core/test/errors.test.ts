@@ -78,6 +78,17 @@ describe("isPaymentSDKError", () => {
 		expect(isPaymentSDKError("boom")).toBe(false);
 		expect(isPaymentSDKError({ code: "UNKNOWN" })).toBe(false);
 	});
+
+	test("returns true for an Error from another copy (duck-typing by name)", () => {
+		const foreign = new Error("boom");
+		foreign.name = "PaymentSDKError";
+		Object.assign(foreign, {
+			code: "DUPLICATE_IDEMPOTENCY_KEY",
+			provider: "midtrans",
+			retryable: false,
+		});
+		expect(isPaymentSDKError(foreign)).toBe(true);
+	});
 });
 
 describe("isRetryable", () => {
