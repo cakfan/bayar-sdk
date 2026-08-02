@@ -38,7 +38,6 @@ jobs:
     name: Build & publish ke npm
     needs: checks
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event.inputs.dry_run == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -51,6 +50,8 @@ jobs:
       # Trusted Publishing (OIDC) butuh npm >= 11.5.1 (ARCHITECTURE.md §10).
       - run: npm install -g npm@latest
       - run: bun install --frozen-lockfile
+      # Core dibangun lebih dulu supaya provider/hono tidak race dengan d.ts core.
+      - run: bun run --filter @bayar-sdk/core build
       - run: bun run build
 
       - name: Publish packages
