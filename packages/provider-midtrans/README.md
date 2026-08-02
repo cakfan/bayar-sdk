@@ -17,7 +17,7 @@ import type { ChargeRequest, RefundRequest } from "@bayar-sdk/core";
 
 const provider = new MidtransProvider({
 	serverKey: "server-key-anda",
-	httpClient: fetch, // inject httpClient agar mudah di-mock/test
+	httpClient: { fetch }, // inject httpClient agar mudah di-mock/test
 	environment: "sandbox", // atau "production" (default: sandbox)
 });
 
