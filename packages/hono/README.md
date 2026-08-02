@@ -86,14 +86,14 @@ Mapping `PaymentErrorCode` → HTTP status mengikuti `ARCHITECTURE.md` §12:
 
 | HTTP | `error.code`                                                                 |
 | ---- | ---------------------------------------------------------------------------- |
-| 400  | `VALIDATION_ERROR`, `INVALID_REQUEST`, `INVALID_AMOUNT`, `INVALID_CURRENCY`   |
-| 401  | `AUTHENTICATION_FAILED`, `WEBHOOK_SIGNATURE_INVALID`                          |
+| 400  | `VALIDATION_ERROR`, `INVALID_REQUEST`, `CAPTURE_NOT_SUPPORTED`                |
+| 401  | `AUTH_FAILED`, `WEBHOOK_SIGNATURE_INVALID`                                    |
 | 404  | `CHARGE_NOT_FOUND`                                                            |
 | 409  | `DUPLICATE_IDEMPOTENCY_KEY`                                                   |
-| 422  | `REFUND_EXCEEDS_CHARGE_AMOUNT`, `REFUND_NOT_ALLOWED`                          |
-| 429  | `RATE_LIMITED`                                                                |
+| 422  | `REFUND_EXCEEDS_CHARGE_AMOUNT`, `REFUND_NOT_ALLOWED`, `INSUFFICIENT_BALANCE`, `CHARGE_DECLINED` |
+| 429  | `PROVIDER_RATE_LIMITED`                                                       |
 | 502  | `PROVIDER_UNAVAILABLE`                                                        |
-| 500  | `UNKNOWN` (error non-`PaymentSDKError`)                                       |
+| 500  | `UNKNOWN`, dan kode lain yang belum ter-map                                   |
 
 ## Webhook
 

@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import type { PaymentErrorCode, PaymentProvider } from "@bayar-sdk/core";
+import { PaymentSDKError } from "@bayar-sdk/core";
 import { createPaymentRoutes } from "../src/middleware";
 import {
 	MOCK_SIGNATURE_HEADER,
@@ -258,5 +260,132 @@ describe("POST /webhooks/:provider", () => {
 			body: JSON.stringify({}),
 		});
 		expect(res.status).toBe(404);
+	});
+});
+
+describe("mapping PaymentSDKError → HTTP status", () => {
+	function throwingProvider(code: PaymentErrorCode): PaymentProvider {
+		return {
+			async createCharge() {
+				throw new PaymentSDKError({ code, provider: "broken" });
+			},
+			async getCharge() {
+				throw new PaymentSDKError({ code, provider: "broken" });
+			},
+			async refund() {
+				throw new PaymentSDKError({ code, provider: "broken" });
+			},
+			async parseWebhook() {
+				throw new PaymentSDKError({ code, provider: "broken" });
+			},
+		};
+	}
+
+	function appWithError(
+		code: PaymentErrorCode,
+	): ReturnType<typeof makeApp>["app"] {
+		return createPaymentRoutes({
+			providers: { broken: throwingProvider(code) },
+			defaultProvider: "broken",
+		});
+	}
+
+	async function expectStatusAndCode(
+		app: ReturnType<typeof makeApp>["app"],
+		status: number,
+		code: string,
+	): Promise<void> {
+		const res = await postJson(
+			app,
+			"/charges",
+			validChargeBody("error-mapping"),
+		);
+		expect(res.status).toBe(status);
+		const data = (await res.json()) as { error: { code: string } };
+		expect(data.error.code).toBe(code);
+	}
+
+	test("INVALID_REQUEST → 400", async () => {
+		await expectStatusAndCode(
+			appWithError("INVALID_REQUEST"),
+			400,
+			"INVALID_REQUEST",
+		);
+	});
+
+	test("CAPTURE_NOT_SUPPORTED → 400", async () => {
+		await expectStatusAndCode(
+			appWithError("CAPTURE_NOT_SUPPORTED"),
+			400,
+			"CAPTURE_NOT_SUPPORTED",
+		);
+	});
+
+	test("AUTH_FAILED → 401", async () => {
+		await expectStatusAndCode(appWithError("AUTH_FAILED"), 401, "AUTH_FAILED");
+	});
+
+	test("CHARGE_NOT_FOUND → 404", async () => {
+		await expectStatusAndCode(
+			appWithError("CHARGE_NOT_FOUND"),
+			404,
+			"CHARGE_NOT_FOUND",
+		);
+	});
+
+	test("DUPLICATE_IDEMPOTENCY_KEY → 409", async () => {
+		await expectStatusAndCode(
+			appWithError("DUPLICATE_IDEMPOTENCY_KEY"),
+			409,
+			"DUPLICATE_IDEMPOTENCY_KEY",
+		);
+	});
+
+	test("INSUFFICIENT_BALANCE → 422", async () => {
+		await expectStatusAndCode(
+			appWithError("INSUFFICIENT_BALANCE"),
+			422,
+			"INSUFFICIENT_BALANCE",
+		);
+	});
+
+	test("CHARGE_DECLINED → 422", async () => {
+		await expectStatusAndCode(
+			appWithError("CHARGE_DECLINED"),
+			422,
+			"CHARGE_DECLINED",
+		);
+	});
+
+	test("REFUND_NOT_ALLOWED → 422", async () => {
+		await expectStatusAndCode(
+			appWithError("REFUND_NOT_ALLOWED"),
+			422,
+			"REFUND_NOT_ALLOWED",
+		);
+	});
+
+	test("REFUND_EXCEEDS_CHARGE_AMOUNT → 422", async () => {
+		await expectStatusAndCode(
+			appWithError("REFUND_EXCEEDS_CHARGE_AMOUNT"),
+			422,
+			"REFUND_EXCEEDS_CHARGE_AMOUNT",
+		);
+	});
+
+	test("PROVIDER_RATE_LIMITED → 429", async () => {
+		await expectStatusAndCode(
+			appWithError("PROVIDER_RATE_LIMITED"),
+			429,
+			"PROVIDER_RATE_LIMITED",
+		);
+	});
+
+	test("PROVIDER_UNAVAILABLE → 502", async () => {
+		await expectStatusAndCode(
+			appWithError("PROVIDER_UNAVAILABLE"),
+			502,
+			"PROVIDER_UNAVAILABLE",
+		);
 	});
 });
