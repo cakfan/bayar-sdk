@@ -19,7 +19,7 @@ export interface PaymentProvider {
 		opts: { idempotencyKey: string },
 	): Promise<RefundResult>;
 
-	parseWebhook(payload: unknown, headers: Headers): WebhookEvent;
+	parseWebhook(payload: unknown, headers: Headers): Promise<WebhookEvent>;
 
 	capturePayment?(chargeId: string): Promise<ChargeResult>;
 }

@@ -80,7 +80,7 @@ interface PaymentProvider {
     opts: { idempotencyKey: string }
   ): Promise<RefundResult>
 
-  parseWebhook(payload: unknown, headers: Headers): WebhookEvent
+  parseWebhook(payload: unknown, headers: Headers): Promise<WebhookEvent>
 
   // Opsional: hanya provider yang mendukung auth-then-capture wajib implement.
   // Provider yang tidak mendukung melempar PaymentSDKError code CAPTURE_NOT_SUPPORTED.
@@ -230,11 +230,13 @@ Berbeda dari domain lain, di payment idempotency bukan best-effort — kegagalan
 ## 6. Webhook handling
 
 ```typescript
-parseWebhook(payload: unknown, headers: Headers): WebhookEvent
+parseWebhook(payload: unknown, headers: Headers): Promise<WebhookEvent>
 ```
 
+> `parseWebhook()` bersifat **async** karena verifikasi signature memakai Web Crypto (`crypto.subtle.digest`) yang berbasis Promise — tidak ada varian sinkron di Web-standard API. Ini berlaku untuk semua provider.
+
 - Verifikasi signature **wajib** dan terjadi *di dalam* `parseWebhook()`, sebelum payload dikembalikan ke consumer. Tidak ada mode "skip verifikasi" — semua provider target v1 menyediakan mekanisme signature.
-- Signature invalid → `parseWebhook()` throw `PaymentSDKError` code `WEBHOOK_SIGNATURE_INVALID`. Consumer app **tidak pernah** menerima `WebhookEvent` dari payload yang belum tervalidasi.
+- Signature invalid → `parseWebhook()` reject dengan `PaymentSDKError` code `WEBHOOK_SIGNATURE_INVALID`. Consumer app **tidak pernah** menerima `WebhookEvent` dari payload yang belum tervalidasi.
 - Mekanisme signature per provider (detail final ada di README masing-masing adapter):
   - **Midtrans**: `signature_key` di body notification, dihitung sebagai `SHA512(order_id + status_code + gross_amount + ServerKey)`. Adapter hitung ulang dan bandingkan dengan yang dikirim.
   - **Xendit**: header `x-callback-token` dibandingkan dengan callback verification token yang dikonfigurasi di dashboard Xendit (constant-time comparison, bukan `===` biasa, untuk menghindari timing attack).
