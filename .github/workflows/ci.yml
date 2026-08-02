@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  ci:
+    name: Lint, typecheck & test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      # Typecheck & test berjalan per package yang sudah punya source/test.
+      # Package bisa sengaja kosong sementara (mis. packages/core saat Fase 0),
+      # jadi step ini di-skip untuk package tanpa file agar CI hijau sejak awal.
+      - name: Typecheck
+        shell: bash
+        run: |
+          set -e
+          for dir in packages/*/; do
+            if [ -n "$(find "$dir/src" -name '*.ts' -type f 2>/dev/null | head -n 1)" ]; then
+              (cd "$dir" && bun run typecheck)
+            fi
+          done
+
+      - name: Test
+        shell: bash
+        run: |
+          set -e
+          for dir in packages/*/; do
+            if [ -n "$(find "$dir" -type f \( -name '*.test.ts' -o -name '*.spec.ts' \) 2>/dev/null | head -n 1)" ]; then
+              (cd "$dir" && bun run test)
+            fi
+          done
