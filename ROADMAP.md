@@ -91,17 +91,17 @@ Setiap task dirancang jadi unit kerja kecil (idealnya satu task = satu PR, satu 
 
 **(blocked by: 3.16, 4.16)**
 
-- [ ] **5.1** Buat `packages/hono/package.json` (nama `@bayar-sdk/hono`, `hono` & `zod` sebagai peerDependencies).
-- [ ] **5.2** Buat zod schema untuk `ChargeRequest` di `packages/hono/src/schemas.ts`.
-- [ ] **5.3** Buat zod schema untuk `RefundRequest`.
-- [ ] **5.4** Implement route `POST /charges` di `packages/hono/src/middleware.ts` — validasi body, wajib header `Idempotency-Key`, panggil `createCharge()`, response 201.
-- [ ] **5.5** Implement route `GET /charges/:id`.
-- [ ] **5.6** Implement route `POST /charges/:id/refund` — wajib header `Idempotency-Key`.
-- [ ] **5.7** Implement route `POST /webhooks/:provider` — pilih adapter dari map `providers`, panggil `parseWebhook()`, response 401 kalau signature invalid.
-- [ ] **5.8** Implement error handler global: `PaymentSDKError` → JSON response sesuai mapping status HTTP di `ARCHITECTURE.md` §12.
-- [ ] **5.9** Fungsi `createPaymentRoutes({ providers, defaultProvider })` yang merakit semua route di atas jadi satu Hono sub-app.
-- [ ] **5.10** Integration test: mount `createPaymentRoutes` dengan `MockPaymentProvider`, test tiap route dengan `hono/testing`.
-- [ ] **5.11** Tulis `packages/hono/README.md`.
+- [x] **5.1** Buat `packages/hono/package.json` (nama `@bayar-sdk/hono`, `hono` & `zod` sebagai peerDependencies).
+- [x] **5.2** Buat zod schema untuk `ChargeRequest` di `packages/hono/src/schemas.ts`.
+- [x] **5.3** Buat zod schema untuk `RefundRequest`.
+- [x] **5.4** Implement route `POST /charges` di `packages/hono/src/middleware.ts` — validasi body, wajib header `Idempotency-Key`, panggil `createCharge()`, response 201.
+- [x] **5.5** Implement route `GET /charges/:id`.
+- [x] **5.6** Implement route `POST /charges/:id/refund` — wajib header `Idempotency-Key`.
+- [x] **5.7** Implement route `POST /webhooks/:provider` — pilih adapter dari map `providers`, panggil `parseWebhook()`, response 401 kalau signature invalid.
+- [x] **5.8** Implement error handler global: `PaymentSDKError` → JSON response sesuai mapping status HTTP di `ARCHITECTURE.md` §12.
+- [x] **5.9** Fungsi `createPaymentRoutes({ providers, defaultProvider })` yang merakit semua route di atas jadi satu Hono sub-app.
+- [x] **5.10** Integration test: mount `createPaymentRoutes` dengan `MockPaymentProvider`, test tiap route (pakai `app.request()` helper Hono).
+- [x] **5.11** Tulis `packages/hono/README.md`.
 
 ## Fase 6 — Examples & dokumentasi konsumen
 
