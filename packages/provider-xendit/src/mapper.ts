@@ -292,12 +292,20 @@ export function fromXenditResponse(raw: unknown): ChargeResult {
 	};
 }
 
+const XENDIT_REFUND_STATUS_TO_NORMALIZED: Record<
+	string,
+	RefundResult["normalizedStatus"]
+> = {
+	SUCCEEDED: "succeeded",
+	PENDING: "pending",
+	FAILED: "failed",
+	CANCELLED: "failed",
+};
+
 function mapRefundStatus(
 	raw: string | undefined,
 ): RefundResult["normalizedStatus"] {
-	if (raw === "SUCCEEDED") return "succeeded";
-	if (raw === "PENDING") return "pending";
-	return "failed";
+	return XENDIT_REFUND_STATUS_TO_NORMALIZED[raw ?? ""] ?? "failed";
 }
 
 export function fromXenditRefundResponse(

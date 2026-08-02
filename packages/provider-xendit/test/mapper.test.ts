@@ -244,4 +244,20 @@ describe("fromXenditRefundResponse", () => {
 		);
 		expect(result.normalizedStatus).toBe("failed");
 	});
+
+	test("refund CANCELLED → failed", () => {
+		const result = fromXenditRefundResponse(
+			{ id: "rfd-3", status: "CANCELLED", amount: 5000 },
+			"pr-1",
+		);
+		expect(result.normalizedStatus).toBe("failed");
+	});
+
+	test("refund status tidak dikenal → failed", () => {
+		const result = fromXenditRefundResponse(
+			{ id: "rfd-4", status: "WEIRD", amount: 5000 },
+			"pr-1",
+		);
+		expect(result.normalizedStatus).toBe("failed");
+	});
 });
