@@ -25,6 +25,53 @@ const RAW_TO_NORMALIZED: Record<string, PaymentStatus> = {
 	disputed: "disputed",
 };
 
+// Status terminal di ARCHITECTURE.md §8: tidak boleh berubah lagi.
+const TERMINAL_STATUSES: ReadonlySet<PaymentStatus> = new Set([
+	"failed",
+	"expired",
+	"cancelled",
+	"refunded",
+	"partially_refunded",
+]);
+
+function isAllowedTransition(
+	current: PaymentStatus | undefined,
+	incoming: PaymentStatus,
+): boolean {
+	if (current === undefined) return true;
+	if (TERMINAL_STATUSES.has(current)) return false;
+	// §8: `paid` tidak pernah kembali ke pending, dan tidak bisa jadi
+	// failed/expired/cancelled (status akhir untuk charge yang belum dibayar).
+	if (
+		current === "paid" &&
+		(incoming === "pending" ||
+			incoming === "failed" ||
+			incoming === "expired" ||
+			incoming === "cancelled")
+	) {
+		return false;
+	}
+	return true;
+}
+
+interface MockWebhookPayload {
+	eventId: string;
+	chargeId: string;
+	rawStatus: string;
+	amount?: number;
+	timestamp?: string;
+}
+
+function isWebhookPayload(payload: unknown): payload is MockWebhookPayload {
+	if (typeof payload !== "object" || payload === null) return false;
+	const data = payload as Record<string, unknown>;
+	return (
+		typeof data.eventId === "string" &&
+		typeof data.chargeId === "string" &&
+		typeof data.rawStatus === "string"
+	);
+}
+
 function constantTimeEqual(a: string, b: string): boolean {
 	if (a.length !== b.length) return false;
 	let diff = 0;
@@ -34,14 +81,13 @@ function constantTimeEqual(a: string, b: string): boolean {
 	return diff === 0;
 }
 
-let chargeCounter = 0;
-
 interface IdempotencyEntry<T> {
 	fingerprint: string;
 	result: T;
 }
 
 export class MockPaymentProvider implements PaymentProvider {
+	private chargeCounter = 0;
 	private readonly charges = new Map<string, ChargeResult>();
 	private readonly chargeIdempotency = new Map<
 		string,
@@ -68,11 +114,10 @@ export class MockPaymentProvider implements PaymentProvider {
 			}
 			return existing.result;
 		}
-
-		chargeCounter += 1;
+		this.chargeCounter += 1;
 		const charge: ChargeResult = {
 			provider: "mock",
-			chargeId: `mock-charge-${chargeCounter}`,
+			chargeId: `mock-charge-${this.chargeCounter}`,
 			referenceId: req.referenceId,
 			status: "pending",
 			normalizedStatus: "pending",
@@ -80,7 +125,7 @@ export class MockPaymentProvider implements PaymentProvider {
 			currency: req.currency,
 			paymentMethod: req.paymentMethod.type,
 			createdAt: new Date().toISOString(),
-			rawResponse: { id: `mock-charge-${chargeCounter}` },
+			rawResponse: { id: `mock-charge-${this.chargeCounter}` },
 		};
 		this.charges.set(charge.chargeId, charge);
 		this.chargeIdempotency.set(opts.idempotencyKey, {
@@ -169,19 +214,20 @@ export class MockPaymentProvider implements PaymentProvider {
 			});
 		}
 
-		const data = payload as {
-			eventId: string;
-			chargeId: string;
-			rawStatus: string;
-			amount?: number;
-			timestamp?: string;
-		};
+		if (!isWebhookPayload(payload)) {
+			throw new PaymentSDKError({
+				code: "INVALID_REQUEST",
+				provider: "mock",
+				message: "Webhook payload is malformed",
+			});
+		}
+		const data = payload;
 		const normalizedStatus = RAW_TO_NORMALIZED[data.rawStatus] ?? "unknown";
 
 		const charge = this.charges.get(data.chargeId);
 		if (
 			charge &&
-			!(charge.normalizedStatus === "paid" && normalizedStatus === "pending")
+			isAllowedTransition(charge.normalizedStatus, normalizedStatus)
 		) {
 			this.charges.set(data.chargeId, {
 				...charge,
