@@ -100,6 +100,7 @@ bun run build          # build dist semua package
 - Satu task `ROADMAP.md` = satu PR.
 - Dokumen wajib dibaca sebelum coding: `PRD.md` → `ARCHITECTURE.md` →
   `ROADMAP.md`.
+- Cara berkontribusi & proses release: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Keamanan
 

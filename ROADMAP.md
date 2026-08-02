@@ -117,10 +117,10 @@ Setiap task dirancang jadi unit kerja kecil (idealnya satu task = satu PR, satu 
 
 **(blocked by: 6.5)**
 
-- [ ] **7.1** Buat `.github/workflows/release.yml` — trigger push ke `main`, job build semua package.
-- [ ] **7.2** Tambah step publish dengan Trusted Publishing (OIDC), urutan `core` → `midtrans` → `xendit` → `hono`, skip versi yang sudah ada di registry.
-- [ ] **7.3** Test dry-run release workflow di branch terpisah (tanpa publish sungguhan) untuk pastikan urutan build & publish benar.
-- [ ] **7.4** Dokumentasikan proses release (cara pakai `bunx changeset`) di `README.md` atau `CONTRIBUTING.md` baru.
+- [x] **7.1** Buat `.github/workflows/release.yml` — trigger push ke `main`, job build semua package.
+- [x] **7.2** Tambah step publish dengan Trusted Publishing (OIDC), urutan `core` → `midtrans` → `xendit` → `hono`, skip versi yang sudah ada di registry.
+- [x] **7.3** Test dry-run release workflow di branch terpisah (tanpa publish sungguhan) untuk pastikan urutan build & publish benar.
+- [x] **7.4** Dokumentasikan proses release (cara pakai `bunx changeset`) di `README.md` atau `CONTRIBUTING.md` baru.
 
 ## Fase 8 — Provider tambahan (opsional, setelah v1 stabil)
 

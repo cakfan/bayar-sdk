@@ -24,11 +24,8 @@ const provider = new MidtransProvider({
 const req: ChargeRequest = {
 	amount: 50000, // integer minor unit (Rp50.000)
 	currency: "IDR",
-	method: "virtual_account",
-	paymentDetails: {
-		bank: "bca",
-	},
-	metadata: { orderId: "order-123" },
+	paymentMethod: { type: "virtual_account", bank: "bca" },
+	referenceId: "order-123",
 };
 
 const result = await provider.createCharge(req, {

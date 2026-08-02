@@ -17,8 +17,8 @@ bun add @bayar-sdk/core @bayar-sdk/hono hono zod
 ```ts
 import { Hono } from "hono";
 import { createPaymentRoutes } from "@bayar-sdk/hono";
-import { MidtransProvider } from "@bayar-sdk/provider-midtrans";
-import { XenditProvider } from "@bayar-sdk/provider-xendit";
+import { MidtransProvider } from "@bayar-sdk/midtrans";
+import { XenditProvider } from "@bayar-sdk/xendit";
 
 const app = new Hono();
 
@@ -26,8 +26,16 @@ app.route(
 	"/payments",
 	createPaymentRoutes({
 		providers: {
-			midtrans: new MidtransProvider({ serverKey, environment: "sandbox" }),
-			xendit: new XenditProvider({ secretKey, callbackToken }),
+			midtrans: new MidtransProvider({
+				serverKey,
+				httpClient: { fetch }, // wajib — dipakai untuk semua request ke provider
+				environment: "sandbox",
+			}),
+			xendit: new XenditProvider({
+				secretKey,
+				callbackToken,
+				httpClient: { fetch },
+			}),
 		},
 		defaultProvider: "midtrans",
 	}),
@@ -111,6 +119,9 @@ provider yang tidak dikenal → `404`.
 
 - Idempotency key wajib untuk `POST /charges` dan `POST /charges/:id/refund`.
   Key sama + payload berbeda → `409 DUPLICATE_IDEMPOTENCY_KEY`.
+- `export default app` adalah pola Hono standar. Kalau aplikasi memakai
+  top-level `Bun.serve` di file yang sama, jangan `export default app` — Bun akan
+  auto-serve dua kali dan memicu `EADDRINUSE` (lihat `examples/hono-api`).
 - Tidak ada raw card data (PAN/CVV) di repo ini; `card` menerima token hasil
   tokenisasi di sisi client.
 - Error non-`PaymentSDKError` diformat sebagai `500 UNKNOWN` — gunakan custom
