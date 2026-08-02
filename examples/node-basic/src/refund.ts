@@ -1,4 +1,4 @@
-import { PaymentSDKError } from "@bayar-sdk/core";
+import { isPaymentSDKError } from "@bayar-sdk/core";
 import { MidtransProvider } from "@bayar-sdk/midtrans";
 
 export async function refundDemo(
@@ -14,12 +14,12 @@ export async function refundDemo(
 	try {
 		const refund = await provider.refund(
 			{ chargeId },
-			{ idempotencyKey: `idem-refund-${Date.now()}` },
+			{ idempotencyKey: `idem-refund-${crypto.randomUUID()}` },
 		);
 		console.log("refundId:", refund.refundId);
 		console.log("normalizedStatus:", refund.normalizedStatus);
 	} catch (err) {
-		if (err instanceof PaymentSDKError && err.code === "REFUND_NOT_ALLOWED") {
+		if (isPaymentSDKError(err) && err.code === "REFUND_NOT_ALLOWED") {
 			console.log("refund ditolak (charge belum paid):", err.message);
 			console.log(
 				"Refund hanya boleh untuk charge berstatus paid (state machine §8).",

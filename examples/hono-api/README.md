@@ -47,19 +47,23 @@ curl -X POST http://localhost:3000/payments/charges \
   -H "Idempotency-Key: idem-001" \
   -d '{"amount":50000,"currency":"IDR","paymentMethod":{"type":"qris"},"referenceId":"order-123"}'
 
-# charge tidak ditemukan → 404 CHARGE_NOT_FOUND
-curl http://localhost:3000/payments/charges/missing
-
 # body invalid → 400 VALIDATION_ERROR
 curl -X POST http://localhost:3000/payments/charges \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: idem-002" \
   -d '{"amount":-5}'
 
-# webhook provider tak dikenal → 404
+# webhook provider tak dikenal → 404 (tanpa menyentuh provider)
 curl -X POST http://localhost:3000/payments/webhooks/stripe \
   -H "Content-Type: application/json" -d '{}'
 ```
+
+> Catatan hasil: dengan key dummy, semua request yang memanggil provider
+> (`createCharge`, `getCharge`, `refund`) mengembalikan `401 AUTH_FAILED` karena
+> Midtrans menolak key dummy saat cek ke sandbox — bukan `404 CHARGE_NOT_FOUND`.
+> `404 CHARGE_NOT_FOUND` baru muncul setelah auth lolos (key asli) dan charge
+> benar-benar tidak ada. `400`/`404` di atas (validasi & webhook provider tak
+> dikenal) ditangani di layer middleware tanpa memanggil provider.
 
 Dengan key dummy, `createCharge` akan mengembalikan `401 AUTH_FAILED` — format
 error: `{ "error": { "code", "message", "provider", "providerErrorCode", "retryable" } }`.

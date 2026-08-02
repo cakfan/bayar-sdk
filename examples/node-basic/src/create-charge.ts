@@ -12,12 +12,12 @@ export async function createChargeDemo(serverKey: string): Promise<string> {
 		amount: 50000, // integer minor unit = Rp50.000
 		currency: "IDR",
 		paymentMethod: { type: "qris" },
-		referenceId: `order-${Date.now()}`,
+		referenceId: `order-${crypto.randomUUID()}`,
 		customer: { name: "Demo User", email: "demo@example.com" },
 	};
 
 	const charge = await provider.createCharge(req, {
-		idempotencyKey: `idem-${Date.now()}`,
+		idempotencyKey: `idem-${crypto.randomUUID()}`,
 	});
 	console.log("chargeId:", charge.chargeId);
 	console.log("normalizedStatus:", charge.normalizedStatus);

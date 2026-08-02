@@ -3,7 +3,7 @@ import { MidtransProvider } from "@bayar-sdk/midtrans";
 import { XenditProvider } from "@bayar-sdk/xendit";
 import { Hono } from "hono";
 
-const PORT = Number(process.env.PORT ?? 3000);
+const PORT = Number(process.env.PORT ?? 3000) || 3000;
 
 // Key diambil dari env; kalau kosong, pakai dummy supaya server tetap bisa
 // dinaikkan dan error mapping (401 AUTH_FAILED) bisa dicoba.
