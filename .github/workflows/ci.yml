@@ -22,6 +22,19 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      # Build dependency order: core dulu karena dist/@bayar-sdk/core
+      # (termasuk testing/) dipakai oleh package provider.
+      - name: Build
+        shell: bash
+        run: |
+          set -e
+          (cd packages/core && bun run build)
+          for dir in packages/*/; do
+            if [ "$dir" != "packages/core/" ] && [ -n "$(find "$dir/src" -name '*.ts' -type f 2>/dev/null | head -n 1)" ]; then
+              (cd "$dir" && bun run build)
+            fi
+          done
+
       # Typecheck & test berjalan per package yang sudah punya source/test.
       # Package bisa sengaja kosong sementara (mis. packages/core saat Fase 0),
       # jadi step ini di-skip untuk package tanpa file agar CI hijau sejak awal.

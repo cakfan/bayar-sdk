@@ -47,22 +47,22 @@ Setiap task dirancang jadi unit kerja kecil (idealnya satu task = satu PR, satu 
 
 **(blocked by: 2.8)**
 
-- [ ] **3.1** Buat `packages/provider-midtrans/package.json` (nama `@bayar-sdk/midtrans`, dependency ke `@bayar-sdk/core`).
-- [ ] **3.2** Buat `packages/provider-midtrans/src/mapper.ts` — fungsi `toMidtransChargeRequest(req: ChargeRequest)` untuk satu metode dulu: **Bank Transfer/VA**. Metode lain menyusul di task terpisah.
-- [ ] **3.3** Tambah ke `mapper.ts`: `toMidtransChargeRequest` untuk metode **QRIS**.
-- [ ] **3.4** Tambah ke `mapper.ts`: `toMidtransChargeRequest` untuk metode **GoPay**.
-- [ ] **3.5** Tambah ke `mapper.ts`: `toMidtransChargeRequest` untuk metode **Credit Card** (menerima `token`, bukan raw card data — validasi ini ada di test).
-- [ ] **3.6** Buat `mapper.ts`: fungsi `fromMidtransResponse(raw): ChargeResult` — mapping status mentah Midtrans → `PaymentStatus` sesuai state machine.
-- [ ] **3.7** Buat `packages/provider-midtrans/src/errors.ts` — mapping kode error Midtrans → `PaymentErrorCode`.
-- [ ] **3.8** Buat `packages/provider-midtrans/src/webhook.ts` — fungsi `verifyMidtransSignature(payload, signatureKey, serverKey)` implementasi `SHA512(order_id+status_code+gross_amount+ServerKey)` pakai `crypto.subtle`. Unit test dengan fixture signature valid & invalid.
-- [ ] **3.9** Lengkapi `webhook.ts`: fungsi `parseMidtransWebhook(payload, headers)` yang panggil `verifyMidtransSignature` dulu, throw kalau invalid, lalu normalisasi ke `WebhookEvent`.
-- [ ] **3.10** Buat `packages/provider-midtrans/src/adapter.ts` — class `MidtransProvider implements PaymentProvider`, constructor terima `{ serverKey, httpClient }`. Implement `createCharge()` (pakai mapper dari 3.2–3.6, wajib `idempotencyKey`).
-- [ ] **3.11** Implement `getCharge()` di `adapter.ts`.
-- [ ] **3.12** Implement `refund()` di `adapter.ts` (wajib `idempotencyKey`, cek status charge dulu sesuai state machine sebelum call API).
-- [ ] **3.13** Implement `parseWebhook()` di `adapter.ts` (delegasi ke `webhook.ts`).
-- [ ] **3.14** Buat `packages/provider-midtrans/src/index.ts` — export `MidtransProvider`.
-- [ ] **3.15** Simpan fixture response asli Midtrans (charge success, charge pending, webhook valid, webhook invalid signature) di `packages/provider-midtrans/__fixtures__/`.
-- [ ] **3.16** Jalankan `runProviderContractTests(() => new MidtransProvider({ serverKey: 'mock', httpClient: mockClient }))` — pastikan lolos semua, perbaiki adapter kalau ada yang gagal.
+- [x] **3.1** Buat `packages/provider-midtrans/package.json` (nama `@bayar-sdk/midtrans`, dependency ke `@bayar-sdk/core`).
+- [x] **3.2** Buat `packages/provider-midtrans/src/mapper.ts` — fungsi `toMidtransChargeRequest(req: ChargeRequest)` untuk satu metode dulu: **Bank Transfer/VA**. Metode lain menyusul di task terpisah.
+- [x] **3.3** Tambah ke `mapper.ts`: `toMidtransChargeRequest` untuk metode **QRIS**.
+- [x] **3.4** Tambah ke `mapper.ts`: `toMidtransChargeRequest` untuk metode **GoPay**.
+- [x] **3.5** Tambah ke `mapper.ts`: `toMidtransChargeRequest` untuk metode **Credit Card** (menerima `token`, bukan raw card data — validasi ini ada di test).
+- [x] **3.6** Buat `mapper.ts`: fungsi `fromMidtransResponse(raw): ChargeResult` — mapping status mentah Midtrans → `PaymentStatus` sesuai state machine.
+- [x] **3.7** Buat `packages/provider-midtrans/src/errors.ts` — mapping kode error Midtrans → `PaymentErrorCode`.
+- [x] **3.8** Buat `packages/provider-midtrans/src/webhook.ts` — fungsi `verifyMidtransSignature(payload, signatureKey, serverKey)` implementasi `SHA512(order_id+status_code+gross_amount+ServerKey)` pakai `crypto.subtle`. Unit test dengan fixture signature valid & invalid.
+- [x] **3.9** Lengkapi `webhook.ts`: fungsi `parseMidtransWebhook(payload, headers)` yang panggil `verifyMidtransSignature` dulu, throw kalau invalid, lalu normalisasi ke `WebhookEvent`.
+- [x] **3.10** Buat `packages/provider-midtrans/src/adapter.ts` — class `MidtransProvider implements PaymentProvider`, constructor terima `{ serverKey, httpClient }`. Implement `createCharge()` (pakai mapper dari 3.2–3.6, wajib `idempotencyKey`).
+- [x] **3.11** Implement `getCharge()` di `adapter.ts`.
+- [x] **3.12** Implement `refund()` di `adapter.ts` (wajib `idempotencyKey`, cek status charge dulu sesuai state machine sebelum call API).
+- [x] **3.13** Implement `parseWebhook()` di `adapter.ts` (delegasi ke `webhook.ts`).
+- [x] **3.14** Buat `packages/provider-midtrans/src/index.ts` — export `MidtransProvider`.
+- [x] **3.15** Simpan fixture response asli Midtrans (charge success, charge pending, webhook valid, webhook invalid signature) di `packages/provider-midtrans/__fixtures__/`.
+- [x] **3.16** Jalankan `runProviderContractTests(() => new MidtransProvider({ serverKey: 'mock', httpClient: mockClient }))` — pastikan lolos semua, perbaiki adapter kalau ada yang gagal.
 - [ ] **3.17** Tulis `packages/provider-midtrans/README.md` — cara pakai, keterbatasan (metode apa saja yang didukung v1).
 
 ## Fase 4 — Provider: Xendit
@@ -134,3 +134,4 @@ Setiap task dirancang jadi unit kerja kecil (idealnya satu task = satu PR, satu 
 - Satu task = satu PR, ikuti `AGENTS.md` §5 (branch naming, commit message).
 - Sebelum tandai task `[x]`, pastikan lolos Definition of Done di `AGENTS.md` §4.
 - Fase 3 dan Fase 4 independen satu sama lain (sama-sama cuma butuh Fase 2 selesai) — bisa dikerjakan paralel oleh dua agent/kontributor berbeda tanpa saling blocking.
+

@@ -12,7 +12,10 @@ export interface ContractTestOptions {
 	webhook: {
 		valid: WebhookFixture;
 		invalid: WebhookFixture;
-		build: (chargeId: string, status: PaymentStatus) => WebhookFixture;
+		build: (
+			chargeId: string,
+			status: PaymentStatus,
+		) => WebhookFixture | Promise<WebhookFixture>;
 	};
 }
 
@@ -109,12 +112,15 @@ export function runProviderContractTests(
 				{ idempotencyKey: "contract-idem-state" },
 			);
 
-			const paidWebhook = options.webhook.build(charge.chargeId, "paid");
+			const paidWebhook = await options.webhook.build(charge.chargeId, "paid");
 			await provider.parseWebhook(paidWebhook.payload, paidWebhook.headers);
 			const afterPaid = await provider.getCharge(charge.chargeId);
 			expect(afterPaid.normalizedStatus).toBe("paid");
 
-			const pendingWebhook = options.webhook.build(charge.chargeId, "pending");
+			const pendingWebhook = await options.webhook.build(
+				charge.chargeId,
+				"pending",
+			);
 			await provider.parseWebhook(
 				pendingWebhook.payload,
 				pendingWebhook.headers,
