@@ -83,7 +83,7 @@ describe("parseMidtransWebhook", () => {
 		);
 		const event = await parseMidtransWebhook(payload, MOCK_MIDTRANS_SERVER_KEY);
 		expect(event.provider).toBe("midtrans");
-		expect(event.chargeId).toBe("order-1");
+		expect(event.chargeId).toBe("mock-event-order-1");
 		expect(event.status).toBe("settlement");
 		expect(event.normalizedStatus).toBe("paid");
 		expect(event.amount).toBe(10000);
@@ -126,6 +126,7 @@ describe("parseMidtransWebhook", () => {
 		);
 		expect(first.id).toMatch(/^sdk:/);
 		expect(second.id).toBe(first.id);
+		expect(first.chargeId).toBe("order-x");
 	});
 
 	test("signature invalid → WEBHOOK_SIGNATURE_INVALID", async () => {

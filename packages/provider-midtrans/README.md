@@ -82,6 +82,10 @@ app.post("/webhook/midtrans", async (c) => {
 | `wallet` (GoPay)      | `gopay`                 |
 | `card` (token-based)  | `credit_card`           |
 
+Bank virtual account yang didukung: `bca`, `bni`, `bri`, `permata`, `mandiri`,
+`cimb`, `danamon`, `bsi`, `seabank`, `saqu` (input dinormalisasi ke lowercase;
+bank lain melempar `INVALID_REQUEST`).
+
 ## Keterbatasan
 
 - **Card** menerima `token` hasil snap/3DS — raw card data (PAN/CVV) tidak pernah

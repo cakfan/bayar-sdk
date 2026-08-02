@@ -8,6 +8,21 @@ import type {
 } from "@bayar-sdk/core";
 import { PaymentSDKError } from "@bayar-sdk/core";
 
+// Nilai `bank` yang dikenal Midtrans untuk payment_type bank_transfer
+// (lihat dokumentasi Core API). Semua lowercase.
+export const SUPPORTED_VA_BANKS: ReadonlySet<string> = new Set([
+	"bca",
+	"bni",
+	"bri",
+	"permata",
+	"mandiri",
+	"cimb",
+	"danamon",
+	"bsi",
+	"seabank",
+	"saqu",
+]);
+
 export interface MidtransTransactionDetails {
 	order_id: string;
 	gross_amount: number;
@@ -62,13 +77,22 @@ export function toMidtransChargeRequest(
 		: undefined;
 
 	switch (req.paymentMethod.type) {
-		case "virtual_account":
+		case "virtual_account": {
+			const bank = req.paymentMethod.bank.toLowerCase();
+			if (!SUPPORTED_VA_BANKS.has(bank)) {
+				throw new PaymentSDKError({
+					code: "INVALID_REQUEST",
+					provider: "midtrans",
+					message: `Unsupported virtual account bank: ${req.paymentMethod.bank}`,
+				});
+			}
 			return {
 				payment_type: "bank_transfer",
 				transaction_details,
-				bank_transfer: { bank: req.paymentMethod.bank.toUpperCase() },
+				bank_transfer: { bank },
 				customer_details,
 			};
+		}
 		case "qris":
 			return {
 				payment_type: "qris",

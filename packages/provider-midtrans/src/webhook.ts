@@ -119,7 +119,7 @@ export async function parseMidtransWebhook(
 		id,
 		provider: "midtrans",
 		type: "payment.status",
-		chargeId: payload.order_id,
+		chargeId: payload.transaction_id ?? payload.order_id,
 		status: payload.transaction_status,
 		normalizedStatus: mapTransactionStatus(payload.transaction_status),
 		amount: parseAmount(payload.gross_amount),

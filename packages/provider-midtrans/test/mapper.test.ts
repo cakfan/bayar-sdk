@@ -26,18 +26,28 @@ function baseRequest(overrides: Partial<ChargeRequest> = {}): ChargeRequest {
 }
 
 describe("toMidtransChargeRequest", () => {
-	test("virtual_account → bank_transfer dengan bank uppercase", () => {
+	test("virtual_account → bank_transfer dengan bank lowercase", () => {
 		const body = toMidtransChargeRequest(
 			baseRequest({
-				paymentMethod: { type: "virtual_account", bank: "bca" },
+				paymentMethod: { type: "virtual_account", bank: "BCA" },
 			}),
 		);
 		expect(body.payment_type).toBe("bank_transfer");
 		if (body.payment_type === "bank_transfer") {
-			expect(body.bank_transfer.bank).toBe("BCA");
+			expect(body.bank_transfer.bank).toBe("bca");
 			expect(body.transaction_details.order_id).toBe("order-001");
 			expect(body.transaction_details.gross_amount).toBe(10000);
 		}
+	});
+
+	test("virtual_account bank tidak dikenal → INVALID_REQUEST", () => {
+		expect(() =>
+			toMidtransChargeRequest(
+				baseRequest({
+					paymentMethod: { type: "virtual_account", bank: "xyz" },
+				}),
+			),
+		).toThrow(PaymentSDKError);
 	});
 
 	test("qris → payment_type qris", () => {

@@ -254,7 +254,7 @@ describe("MidtransProvider.parseWebhook", () => {
 			MOCK_MIDTRANS_SERVER_KEY,
 		);
 		const event = await provider.parseWebhook(payload, new Headers());
-		expect(event.chargeId).toBe("order-wh");
+		expect(event.chargeId).toBe("mock-event-order-wh");
 		expect(event.normalizedStatus).toBe("paid");
 	});
 
