@@ -19,7 +19,9 @@ bun start          # dari folder ini (atau bun dev untuk auto-reload)
 
 Tanpa env var, server tetap naik dengan key dummy — request API akan gagal
 `401 AUTH_FAILED`, yang sekaligus mendemonstrasikan format error. Untuk charge
-sunguhan, set env key asli:
+sunguhan, isi `MIDTRANS_SERVER_KEY`/`XENDIT_SECRET_KEY`/`XENDIT_CALLBACK_TOKEN`
+di file `.env` **root repo** (sudah di-gitignore) — `bun start`/`bun dev`
+otomatis memuatnya lewat `--env-file=../../.env`. Cara lain tetap didukung:
 
 ```powershell
 $env:MIDTRANS_SERVER_KEY = "SB-Mid-server-xxxx"

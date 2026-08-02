@@ -11,7 +11,13 @@ export async function createChargeDemo(serverKey: string): Promise<string> {
 	const req: ChargeRequest = {
 		amount: 50000, // integer minor unit = Rp50.000
 		currency: "IDR",
-		paymentMethod: { type: "qris" },
+		// Default: virtual_account (aktif default di sandbox). Untuk QRIS
+		// ({ type: "qris" }), channel harus diaktifkan dulu: di dashboard via
+		// halaman "+Payment Method" (dashboard.midtrans.com/new_payment_method) —
+		// umumnya butuh GoPay aktif dulu. Untuk Core API, aktivasi QRIS kadang
+		// perlu request manual ke support@midtrans.com. Kalau belum, Midtrans
+		// membalas 402.
+		paymentMethod: { type: "virtual_account", bank: "bca" },
 		referenceId: `order-${crypto.randomUUID()}`,
 		customer: { name: "Demo User", email: "demo@example.com" },
 	};

@@ -5,7 +5,7 @@
 	"description": "Basic usage example: MidtransProvider directly (createCharge, getCharge, refund, parseWebhook)",
 	"type": "module",
 	"scripts": {
-		"start": "bun run src/index.ts",
+		"start": "bun --env-file=../../.env run src/index.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {

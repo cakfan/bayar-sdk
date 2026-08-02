@@ -26,7 +26,19 @@ normalizedStatus: paid
 ```
 
 Untuk menjalankan `createCharge`/`getCharge`/`refund` yang memanggil API
-Midtrans sandbox, set `MIDTRANS_SERVER_KEY` dulu:
+Midtrans sandbox, isi `MIDTRANS_SERVER_KEY` di file `.env` **root repo**
+(sudah di-gitignore). `bun start` otomatis memuat `.env` root lewat
+`bun --env-file=../../.env`, jadi cukup:
+
+```bash
+# .env (root repo)
+MIDTRANS_SERVER_KEY=SB-Mid-server-xxxx
+
+# lalu dari folder ini:
+bun start
+```
+
+Cara lain (tanpa `.env`):
 
 ```powershell
 $env:MIDTRANS_SERVER_KEY = "SB-Mid-server-xxxx"; bun start
@@ -43,5 +55,12 @@ $env:MIDTRANS_SERVER_KEY = "SB-Mid-server-xxxx"; bun start
 - Refund pada charge berstatus `pending` melempar `PaymentSDKError`
   `REFUND_NOT_ALLOWED` — contoh menangkap dan mencetak pesannya (lihat state
   machine di `ARCHITECTURE.md` §8).
+- Contoh membuat charge dengan **virtual account** (`bank: "bca"`, aktif default
+  di sandbox). Untuk metode lain, ganti `paymentMethod` — mis. QRIS
+  `{ type: "qris" }` perlu channel diaktifkan dulu di dashboard lewat halaman
+  **"+Payment Method"** (`dashboard.midtrans.com/new_payment_method`, biasanya
+  butuh GoPay aktif; untuk Core API kadang perlu request manual ke
+  `support@midtrans.com`). Kalau belum aktif, Midtrans membalas `402` dan SDK
+  menormalkannya menjadi `PaymentSDKError` `INVALID_REQUEST`.
 - Webhook Midtrans: signature diverifikasi dengan SHA512 di dalam
   `parseWebhook()` sebelum event dikembalikan.
