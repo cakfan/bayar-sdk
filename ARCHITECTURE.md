@@ -343,7 +343,7 @@ createPaymentRoutes({
 - `GET /charges/:id` — ambil status charge terkini.
 - `POST /charges/:id/refund` — body `RefundRequest` + header `Idempotency-Key` wajib.
 - `POST /webhooks/:provider` — pilih adapter sesuai param URL, verifikasi signature, lalu proses `WebhookEvent`. Response 401 kalau signature invalid, 200 kalau valid (walau event-nya di-skip di sisi consumer).
-- `PaymentSDKError` → JSON `{ error: { code, message, provider, providerErrorCode, retryable } }` dengan status HTTP: 401 (auth/signature), 404 (charge tidak ditemukan), 409 (`DUPLICATE_IDEMPOTENCY_KEY`), 422 (`REFUND_NOT_ALLOWED`/`REFUND_EXCEEDS_CHARGE_AMOUNT`), 429 (rate limit), 502 (provider unavailable), 500 (unknown). Error validasi → 400 `VALIDATION_ERROR`.
+- `PaymentSDKError` → JSON `{ error: { code, message, provider, providerErrorCode, retryable } }` dengan status HTTP: 400 (`INVALID_REQUEST`, `CAPTURE_NOT_SUPPORTED`), 401 (auth/signature: `AUTH_FAILED`, `WEBHOOK_SIGNATURE_INVALID`), 404 (charge tidak ditemukan: `CHARGE_NOT_FOUND`), 409 (`DUPLICATE_IDEMPOTENCY_KEY`), 422 (`REFUND_NOT_ALLOWED`, `REFUND_EXCEEDS_CHARGE_AMOUNT`, `INSUFFICIENT_BALANCE`, `CHARGE_DECLINED`), 429 (rate limit: `PROVIDER_RATE_LIMITED`), 502 (provider unavailable: `PROVIDER_UNAVAILABLE`), 500 (`UNKNOWN` dan error non-`PaymentSDKError`). Error validasi → 400 `VALIDATION_ERROR`.
 - `hono` & `zod` adalah peerDependencies.
 
 ## 13. Status
