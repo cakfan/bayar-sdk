@@ -212,6 +212,72 @@ describe("MidtransProvider.refund", () => {
 		expect(refundRequests).toHaveLength(1);
 	});
 
+	test("refund amount 0 → INVALID_REQUEST tanpa hit endpoint refund", async () => {
+		const client = new MockMidtransHttpClient();
+		client.statusTransactionStatus = "settlement";
+		const provider = makeProvider(client);
+		const created = await provider.createCharge(
+			chargeRequest("order-refund-zero"),
+			{ idempotencyKey: "idem-refund-zero" },
+		);
+		await expect(
+			provider.refund(
+				{ chargeId: created.chargeId, amount: 0 },
+				{ idempotencyKey: "refund-key-zero" },
+			),
+		).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+		expect(client.requests.some((r) => /\/refund/.test(r.url))).toBe(false);
+	});
+
+	test("refund amount negatif → INVALID_REQUEST", async () => {
+		const client = new MockMidtransHttpClient();
+		client.statusTransactionStatus = "settlement";
+		const provider = makeProvider(client);
+		const created = await provider.createCharge(
+			chargeRequest("order-refund-negative"),
+			{ idempotencyKey: "idem-refund-negative" },
+		);
+		await expect(
+			provider.refund(
+				{ chargeId: created.chargeId, amount: -5000 },
+				{ idempotencyKey: "refund-key-negative" },
+			),
+		).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+	});
+
+	test("refund amount non-integer → INVALID_REQUEST", async () => {
+		const client = new MockMidtransHttpClient();
+		client.statusTransactionStatus = "settlement";
+		const provider = makeProvider(client);
+		const created = await provider.createCharge(
+			chargeRequest("order-refund-fraction"),
+			{ idempotencyKey: "idem-refund-fraction" },
+		);
+		await expect(
+			provider.refund(
+				{ chargeId: created.chargeId, amount: 5000.5 },
+				{ idempotencyKey: "refund-key-fraction" },
+			),
+		).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+	});
+
+	test("refund amount melebihi charge → REFUND_EXCEEDS_CHARGE_AMOUNT tanpa hit endpoint refund", async () => {
+		const client = new MockMidtransHttpClient();
+		client.statusTransactionStatus = "settlement";
+		const provider = makeProvider(client);
+		const created = await provider.createCharge(
+			chargeRequest("order-refund-exceed"),
+			{ idempotencyKey: "idem-refund-exceed" },
+		);
+		await expect(
+			provider.refund(
+				{ chargeId: created.chargeId, amount: 10001 },
+				{ idempotencyKey: "refund-key-exceed" },
+			),
+		).rejects.toMatchObject({ code: "REFUND_EXCEEDS_CHARGE_AMOUNT" });
+		expect(client.requests.some((r) => /\/refund/.test(r.url))).toBe(false);
+	});
+
 	test("idempotency refund sama + payload beda → DUPLICATE_IDEMPOTENCY_KEY", async () => {
 		const client = new MockMidtransHttpClient();
 		client.statusTransactionStatus = "settlement";

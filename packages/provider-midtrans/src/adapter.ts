@@ -153,12 +153,31 @@ export class MidtransProvider implements PaymentProvider {
 			return cached.result as RefundResult;
 		}
 
+		if (
+			req.amount !== undefined &&
+			(!Number.isInteger(req.amount) || req.amount <= 0)
+		) {
+			throw new PaymentSDKError({
+				code: "INVALID_REQUEST",
+				provider: "midtrans",
+				message: "Refund amount must be a positive integer in minor units",
+			});
+		}
+
 		const charge = await this.getCharge(req.chargeId);
 		if (charge.normalizedStatus !== "paid") {
 			throw new PaymentSDKError({
 				code: "REFUND_NOT_ALLOWED",
 				provider: "midtrans",
 				message: "Refund is only allowed for paid charges",
+			});
+		}
+
+		if (req.amount !== undefined && req.amount > charge.amount) {
+			throw new PaymentSDKError({
+				code: "REFUND_EXCEEDS_CHARGE_AMOUNT",
+				provider: "midtrans",
+				message: "Refund amount exceeds charge amount",
 			});
 		}
 
