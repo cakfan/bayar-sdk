@@ -13,6 +13,13 @@
 		"verbatimModuleSyntax": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
+		"baseUrl": ".",
+		"paths": {
+			"@bayar-sdk/core": ["./packages/core/src/index.ts"],
+			"@bayar-sdk/midtrans": ["./packages/provider-midtrans/src/index.ts"],
+			"@bayar-sdk/xendit": ["./packages/provider-xendit/src/index.ts"],
+			"@bayar-sdk/hono": ["./packages/hono/src/index.ts"]
+		},
 		"declaration": true,
 		"declarationMap": true,
 		"sourceMap": true,
