@@ -23,7 +23,7 @@ import type { ChargeRequest, RefundRequest } from "@bayar-sdk/core";
 const provider = new XenditProvider({
 	secretKey: process.env.XENDIT_SECRET_KEY,
 	callbackToken: process.env.XENDIT_CALLBACK_VERIFICATION_TOKEN,
-	httpClient: fetch, // inject httpClient agar mudah di-mock/test
+	httpClient: { fetch }, // inject httpClient agar mudah di-mock/test
 });
 
 const req: ChargeRequest = {

@@ -107,11 +107,11 @@ Setiap task dirancang jadi unit kerja kecil (idealnya satu task = satu PR, satu 
 
 **(blocked by: 5.11)**
 
-- [ ] **6.1** Buat `examples/node-basic/` — script sederhana pakai `MidtransProvider` langsung (createCharge, getCharge).
-- [ ] **6.2** Tambah contoh `refund()` di `examples/node-basic/`.
-- [ ] **6.3** Tambah contoh `parseWebhook()` dengan payload dummy di `examples/node-basic/`.
-- [ ] **6.4** Buat `examples/hono-api/` — server Hono lengkap pakai `createPaymentRoutes` dengan Midtrans + Xendit sekaligus.
-- [ ] **6.5** Update `README.md` root — quick start, tabel package, link ke semua dokumen (`PRD.md`, `ARCHITECTURE.md`).
+- [x] **6.1** Buat `examples/node-basic/` — script sederhana pakai `MidtransProvider` langsung (createCharge, getCharge).
+- [x] **6.2** Tambah contoh `refund()` di `examples/node-basic/`.
+- [x] **6.3** Tambah contoh `parseWebhook()` dengan payload dummy di `examples/node-basic/`.
+- [x] **6.4** Buat `examples/hono-api/` — server Hono lengkap pakai `createPaymentRoutes` dengan Midtrans + Xendit sekaligus.
+- [x] **6.5** Update `README.md` root — quick start, tabel package, link ke semua dokumen (`PRD.md`, `ARCHITECTURE.md`).
 
 ## Fase 7 — Release automation
 
