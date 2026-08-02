@@ -34,14 +34,14 @@ Setiap task dirancang jadi unit kerja kecil (idealnya satu task = satu PR, satu 
 
 **(blocked by: 1.8)**
 
-- [ ] **2.1** Buat `packages/core/testing/contract-tests.ts` — skeleton `runProviderContractTests(factory: () => PaymentProvider)`, belum ada test case, hanya struktur (`describe` kosong per operasi: createCharge, getCharge, refund, parseWebhook).
-- [ ] **2.2** Isi test case createCharge: idempotency key sama + payload sama → `chargeId` identik pada mock (butuh `MockPaymentProvider` sederhana di `__fixtures__/mock-provider.ts` untuk validasi struktur suite-nya sendiri).
-- [ ] **2.3** Isi test case createCharge: idempotency key sama + payload beda → throw `DUPLICATE_IDEMPOTENCY_KEY`.
-- [ ] **2.4** Isi test case parseWebhook: signature invalid → throw `WEBHOOK_SIGNATURE_INVALID`.
-- [ ] **2.5** Isi test case parseWebhook: signature valid + payload identik dua kali → `WebhookEvent.id` stabil/sama.
-- [ ] **2.6** Isi test case refund: charge berstatus `pending` → throw `REFUND_NOT_ALLOWED`.
-- [ ] **2.7** Isi test case status mapping: verifikasi tidak ada transisi `paid → pending` di mock provider (test negatif, dokumentasikan ekspektasi state machine).
-- [ ] **2.8** Export `runProviderContractTests` dari `packages/core/testing/index.ts`, tambahkan entry `exports` di `package.json` core untuk subpath `/testing`.
+- [x] **2.1** Buat `packages/core/testing/contract-tests.ts` — skeleton `runProviderContractTests(factory: () => PaymentProvider)`, belum ada test case, hanya struktur (`describe` kosong per operasi: createCharge, getCharge, refund, parseWebhook).
+- [x] **2.2** Isi test case createCharge: idempotency key sama + payload sama → `chargeId` identik pada mock (butuh `MockPaymentProvider` sederhana di `__fixtures__/mock-provider.ts` untuk validasi struktur suite-nya sendiri).
+- [x] **2.3** Isi test case createCharge: idempotency key sama + payload beda → throw `DUPLICATE_IDEMPOTENCY_KEY`.
+- [x] **2.4** Isi test case parseWebhook: signature invalid → throw `WEBHOOK_SIGNATURE_INVALID`.
+- [x] **2.5** Isi test case parseWebhook: signature valid + payload identik dua kali → `WebhookEvent.id` stabil/sama.
+- [x] **2.6** Isi test case refund: charge berstatus `pending` → throw `REFUND_NOT_ALLOWED`.
+- [x] **2.7** Isi test case status mapping: verifikasi tidak ada transisi `paid → pending` di mock provider (test negatif, dokumentasikan ekspektasi state machine).
+- [x] **2.8** Export `runProviderContractTests` dari `packages/core/testing/index.ts`, tambahkan entry `exports` di `package.json` core untuk subpath `/testing`.
 
 ## Fase 3 — Provider: Midtrans
 

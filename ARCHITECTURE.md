@@ -17,7 +17,8 @@ bayar-sdk/
 │   │   │   ├── idempotency.ts     util validasi/generate idempotency key
 │   │   │   └── index.ts
 │   │   ├── testing/
-│   │   │   └── contract-tests.ts  runProviderContractTests()
+│   │   │   ├── contract-tests.ts  runProviderContractTests()
+│   │   │   └── index.ts           export subpath @bayar-sdk/core/testing
 │   │   └── package.json
 │   │
 │   ├── provider-midtrans/         @bayar-sdk/midtrans
