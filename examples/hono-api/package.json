@@ -1,0 +1,24 @@
+{
+	"name": "@bayar-sdk/example-hono-api",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Full Hono server example: createPaymentRoutes with Midtrans + Xendit",
+	"type": "module",
+	"scripts": {
+		"dev": "bun --watch src/index.ts",
+		"start": "bun run src/index.ts",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@bayar-sdk/core": "workspace:*",
+		"@bayar-sdk/hono": "workspace:*",
+		"@bayar-sdk/midtrans": "workspace:*",
+		"@bayar-sdk/xendit": "workspace:*",
+		"hono": "^4",
+		"zod": "^3"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.3.14",
+		"typescript": "^5.9.3"
+	}
+}
