@@ -7,30 +7,32 @@ import type {
 	WebhookEvent,
 } from "@bayar-sdk/core";
 import { assertIdempotencyKey, PaymentSDKError } from "@bayar-sdk/core";
-import { isMidtransSuccessStatus, mapMidtransError } from "./errors";
+import { mapXenditError } from "./errors";
 import {
-	fromMidtransRefundResponse,
-	fromMidtransResponse,
-	toMidtransChargeRequest,
+	fromXenditRefundResponse,
+	fromXenditResponse,
+	toXenditChargeRequest,
 } from "./mapper";
-import { parseMidtransWebhook } from "./webhook";
+import { parseXenditWebhook } from "./webhook";
 
 export interface HttpClient {
 	fetch(url: string, init?: RequestInit): Promise<Response>;
 }
 
-const SANDBOX_BASE_URL = "https://api.sandbox.midtrans.com/v2";
-const PRODUCTION_BASE_URL = "https://api.midtrans.com/v2";
+// Xendit memakai satu host untuk test dan live — environment ditentukan oleh
+// secret key itu sendiri (test key vs live key), bukan oleh host.
+const BASE_URL = "https://api.xendit.co";
+const PAYMENT_REQUESTS_API_VERSION = "2024-11-11";
 
 interface IdempotencyEntry {
 	fingerprint: string;
 	result: ChargeResult | RefundResult;
 }
 
-export interface MidtransProviderOptions {
-	serverKey: string;
+export interface XenditProviderOptions {
+	secretKey: string;
+	callbackToken: string;
 	httpClient: HttpClient;
-	environment?: "sandbox" | "production";
 }
 
 async function readJson(
@@ -50,27 +52,23 @@ function fingerprintOf(value: unknown): string {
 	return JSON.stringify(value);
 }
 
-export class MidtransProvider implements PaymentProvider {
-	private readonly serverKey: string;
+export class XenditProvider implements PaymentProvider {
+	private readonly secretKey: string;
+	private readonly callbackToken: string;
 	private readonly httpClient: HttpClient;
-	private readonly baseUrl: string;
 	private readonly chargeIdempotency = new Map<string, IdempotencyEntry>();
 	private readonly refundIdempotency = new Map<string, IdempotencyEntry>();
-	private readonly orderIdByChargeId = new Map<string, string>();
 
-	constructor(options: MidtransProviderOptions) {
-		this.serverKey = options.serverKey;
+	constructor(options: XenditProviderOptions) {
+		this.secretKey = options.secretKey;
+		this.callbackToken = options.callbackToken;
 		this.httpClient = options.httpClient;
-		this.baseUrl =
-			options.environment === "production"
-				? PRODUCTION_BASE_URL
-				: SANDBOX_BASE_URL;
 	}
 
 	private authHeaders(idempotencyKey?: string): Record<string, string> {
 		const headers: Record<string, string> = {
 			"content-type": "application/json",
-			authorization: `Basic ${btoa(`${this.serverKey}:`)}`,
+			authorization: `Basic ${btoa(`${this.secretKey}:`)}`,
 		};
 		if (idempotencyKey !== undefined) {
 			headers["idempotency-key"] = idempotencyKey;
@@ -81,11 +79,19 @@ export class MidtransProvider implements PaymentProvider {
 	private async request(
 		url: string,
 		init: RequestInit,
+		apiVersion?: string,
 	): Promise<Record<string, unknown> | undefined> {
-		const response = await this.httpClient.fetch(url, init);
+		const headers = new Headers(init.headers);
+		if (apiVersion !== undefined) {
+			headers.set("api-version", apiVersion);
+		}
+		const response = await this.httpClient.fetch(url, {
+			...init,
+			headers,
+		});
 		const raw = await readJson(response);
-		if (!response.ok || !isMidtransSuccessStatus(raw?.status_code as string)) {
-			throw mapMidtransError(response.status, raw);
+		if (!response.ok) {
+			throw mapXenditError(response.status, raw);
 		}
 		return raw;
 	}
@@ -101,21 +107,24 @@ export class MidtransProvider implements PaymentProvider {
 			if (cached.fingerprint !== fingerprint) {
 				throw new PaymentSDKError({
 					code: "DUPLICATE_IDEMPOTENCY_KEY",
-					provider: "midtrans",
+					provider: "xendit",
 					message: "Idempotency key already used with a different payload",
 				});
 			}
 			return cached.result as ChargeResult;
 		}
 
-		const raw = await this.request(`${this.baseUrl}/charge`, {
-			method: "POST",
-			headers: this.authHeaders(opts.idempotencyKey),
-			body: JSON.stringify(toMidtransChargeRequest(req)),
-		});
+		const raw = await this.request(
+			`${BASE_URL}/v3/payment_requests`,
+			{
+				method: "POST",
+				headers: this.authHeaders(opts.idempotencyKey),
+				body: JSON.stringify(toXenditChargeRequest(req)),
+			},
+			PAYMENT_REQUESTS_API_VERSION,
+		);
 
-		const result = fromMidtransResponse(raw);
-		this.orderIdByChargeId.set(result.chargeId, result.referenceId);
+		const result = fromXenditResponse(raw);
 		this.chargeIdempotency.set(opts.idempotencyKey, {
 			fingerprint,
 			result,
@@ -124,15 +133,15 @@ export class MidtransProvider implements PaymentProvider {
 	}
 
 	async getCharge(chargeId: string): Promise<ChargeResult> {
-		const orderId = this.orderIdByChargeId.get(chargeId) ?? chargeId;
 		const raw = await this.request(
-			`${this.baseUrl}/${encodeURIComponent(orderId)}/status`,
+			`${BASE_URL}/v3/payment_requests/${encodeURIComponent(chargeId)}`,
 			{
 				method: "GET",
 				headers: this.authHeaders(),
 			},
+			PAYMENT_REQUESTS_API_VERSION,
 		);
-		return fromMidtransResponse(raw);
+		return fromXenditResponse(raw);
 	}
 
 	async refund(
@@ -146,7 +155,7 @@ export class MidtransProvider implements PaymentProvider {
 			if (cached.fingerprint !== fingerprint) {
 				throw new PaymentSDKError({
 					code: "DUPLICATE_IDEMPOTENCY_KEY",
-					provider: "midtrans",
+					provider: "xendit",
 					message: "Idempotency key already used with a different payload",
 				});
 			}
@@ -159,7 +168,7 @@ export class MidtransProvider implements PaymentProvider {
 		) {
 			throw new PaymentSDKError({
 				code: "INVALID_REQUEST",
-				provider: "midtrans",
+				provider: "xendit",
 				message: "Refund amount must be a positive integer in minor units",
 			});
 		}
@@ -168,7 +177,7 @@ export class MidtransProvider implements PaymentProvider {
 		if (charge.normalizedStatus !== "paid") {
 			throw new PaymentSDKError({
 				code: "REFUND_NOT_ALLOWED",
-				provider: "midtrans",
+				provider: "xendit",
 				message: "Refund is only allowed for paid charges",
 			});
 		}
@@ -176,32 +185,27 @@ export class MidtransProvider implements PaymentProvider {
 		if (req.amount !== undefined && req.amount > charge.amount) {
 			throw new PaymentSDKError({
 				code: "REFUND_EXCEEDS_CHARGE_AMOUNT",
-				provider: "midtrans",
+				provider: "xendit",
 				message: "Refund amount exceeds charge amount",
 			});
 		}
 
-		const orderId = charge.referenceId;
-		const partial = req.amount !== undefined;
-		const url = partial
-			? `${this.baseUrl}/${encodeURIComponent(orderId)}/refund/partial/${encodeURIComponent(opts.idempotencyKey)}`
-			: `${this.baseUrl}/${encodeURIComponent(orderId)}/refund`;
-		const payload = partial
-			? {
-					refund_amount: req.amount,
-					...(req.reason ? { reason: req.reason } : {}),
-				}
-			: req.reason
-				? { reason: req.reason }
-				: {};
+		const payload: Record<string, unknown> = {
+			payment_request_id: req.chargeId,
+			reason: req.reason ?? "REQUESTED_BY_CUSTOMER",
+			currency: charge.currency,
+		};
+		if (req.amount !== undefined) {
+			payload.amount = req.amount;
+		}
 
-		const raw = await this.request(url, {
+		const raw = await this.request(`${BASE_URL}/refunds`, {
 			method: "POST",
 			headers: this.authHeaders(opts.idempotencyKey),
 			body: JSON.stringify(payload),
 		});
 
-		const result = fromMidtransRefundResponse(raw, req.chargeId);
+		const result = fromXenditRefundResponse(raw, req.chargeId);
 		this.refundIdempotency.set(opts.idempotencyKey, {
 			fingerprint,
 			result,
@@ -213,14 +217,14 @@ export class MidtransProvider implements PaymentProvider {
 		payload: unknown,
 		headers: Headers,
 	): Promise<WebhookEvent> {
-		return parseMidtransWebhook(payload, this.serverKey, headers);
+		return parseXenditWebhook(payload, headers, this.callbackToken);
 	}
 
 	async capturePayment(_chargeId: string): Promise<ChargeResult> {
 		throw new PaymentSDKError({
 			code: "CAPTURE_NOT_SUPPORTED",
-			provider: "midtrans",
-			message: "Midtrans Core API does not support separate capture",
+			provider: "xendit",
+			message: "Xendit payment requests are captured automatically",
 		});
 	}
 }

@@ -1,16 +1,18 @@
 import { describe, expect, test } from "bun:test";
 import type { ChargeRequest } from "@bayar-sdk/core";
-import { MockMidtransHttpClient } from "../__fixtures__/mock-client";
+import { MockXenditHttpClient } from "../__fixtures__/mock-client";
 import {
-	buildInvalidMidtransWebhook,
-	buildMidtransWebhook,
-	MOCK_MIDTRANS_SERVER_KEY,
+	buildInvalidXenditWebhook,
+	buildXenditWebhook,
+	MOCK_XENDIT_CALLBACK_TOKEN,
+	MOCK_XENDIT_SECRET_KEY,
 } from "../__fixtures__/webhook";
-import { MidtransProvider } from "../src/adapter";
+import { XenditProvider } from "../src/adapter";
 
-function makeProvider(client: MockMidtransHttpClient): MidtransProvider {
-	return new MidtransProvider({
-		serverKey: MOCK_MIDTRANS_SERVER_KEY,
+function makeProvider(client: MockXenditHttpClient): XenditProvider {
+	return new XenditProvider({
+		secretKey: MOCK_XENDIT_SECRET_KEY,
+		callbackToken: MOCK_XENDIT_CALLBACK_TOKEN,
 		httpClient: client,
 	});
 }
@@ -24,22 +26,26 @@ function chargeRequest(referenceId = "order-adapter-1"): ChargeRequest {
 	};
 }
 
-describe("MidtransProvider.createCharge", () => {
-	test("POST /v2/charge dan mengembalikan ChargeResult", async () => {
-		const client = new MockMidtransHttpClient();
+describe("XenditProvider.createCharge", () => {
+	test("POST /v3/payment_requests dengan api-version dan mengembalikan ChargeResult", async () => {
+		const client = new MockXenditHttpClient();
 		const provider = makeProvider(client);
 		const result = await provider.createCharge(chargeRequest(), {
 			idempotencyKey: "idem-1",
 		});
-		expect(result.provider).toBe("midtrans");
+		expect(result.provider).toBe("xendit");
 		expect(result.referenceId).toBe("order-adapter-1");
 		expect(result.normalizedStatus).toBe("pending");
-		expect(client.requests[0]?.url).toContain("/v2/charge");
-		expect(client.requests[0]?.init?.method).toBe("POST");
+		const request = client.requests[0];
+		expect(request?.url).toContain("/v3/payment_requests");
+		expect(request?.init?.method).toBe("POST");
+		const headers = request?.init?.headers as Headers | undefined;
+		expect(headers?.get("api-version")).toBe("2024-11-11");
+		expect(headers?.get("idempotency-key")).toBe("idem-1");
 	});
 
 	test("idempotency key sama + payload sama → chargeId sama, hanya 1 request", async () => {
-		const client = new MockMidtransHttpClient();
+		const client = new MockXenditHttpClient();
 		const provider = makeProvider(client);
 		const req = chargeRequest();
 		const first = await provider.createCharge(req, {
@@ -50,13 +56,13 @@ describe("MidtransProvider.createCharge", () => {
 		});
 		expect(second.chargeId).toBe(first.chargeId);
 		const chargeRequests = client.requests.filter((r) =>
-			r.url.includes("/charge"),
+			r.url.includes("/payment_requests"),
 		);
 		expect(chargeRequests).toHaveLength(1);
 	});
 
 	test("idempotency key sama + payload beda → DUPLICATE_IDEMPOTENCY_KEY", async () => {
-		const client = new MockMidtransHttpClient();
+		const client = new MockXenditHttpClient();
 		const provider = makeProvider(client);
 		await provider.createCharge(chargeRequest("order-a"), {
 			idempotencyKey: "idem-conflict",
@@ -69,49 +75,51 @@ describe("MidtransProvider.createCharge", () => {
 	});
 
 	test("idempotency key kosong → INVALID_REQUEST", async () => {
-		const provider = makeProvider(new MockMidtransHttpClient());
+		const provider = makeProvider(new MockXenditHttpClient());
 		await expect(
 			provider.createCharge(chargeRequest(), { idempotencyKey: "" }),
 		).rejects.toMatchObject({ code: "INVALID_REQUEST" });
 	});
 
 	test("response tidak sukses → error termapping", async () => {
-		const client = new MockMidtransHttpClient();
+		const client = new MockXenditHttpClient();
 		client.chargeStatusCode = 400;
 		const provider = makeProvider(client);
 		await expect(
 			provider.createCharge(chargeRequest(), { idempotencyKey: "idem-err" }),
 		).rejects.toMatchObject({
 			code: "INVALID_REQUEST",
-			providerErrorCode: "400",
+			providerErrorCode: "API_VALIDATION_ERROR",
 		});
 	});
 });
 
-describe("MidtransProvider.getCharge", () => {
-	test("memetakan chargeId → order_id lalu GET status", async () => {
-		const client = new MockMidtransHttpClient();
+describe("XenditProvider.getCharge", () => {
+	test("mengambil payment request by id", async () => {
+		const client = new MockXenditHttpClient();
 		const provider = makeProvider(client);
 		const created = await provider.createCharge(chargeRequest("order-get"), {
 			idempotencyKey: "idem-get",
 		});
 		const fetched = await provider.getCharge(created.chargeId);
 		expect(fetched.chargeId).toBe(created.chargeId);
-		expect(client.requests[1]?.url).toContain("/v2/order-get/status");
+		expect(client.requests[1]?.url).toContain(
+			`/v3/payment_requests/${created.chargeId}`,
+		);
 	});
 
-	test("chargeId tidak dikenal → dipakai sebagai order_id langsung", async () => {
-		const client = new MockMidtransHttpClient();
+	test("chargeId tidak dikenal → dipakai apa adanya", async () => {
+		const client = new MockXenditHttpClient();
 		const provider = makeProvider(client);
-		const fetched = await provider.getCharge("unknown-order");
-		expect(fetched.referenceId).toBe("unknown-order");
+		const fetched = await provider.getCharge("pr-unknown-1");
+		expect(fetched.referenceId).toBe("pr-unknown-1");
 	});
 });
 
-describe("MidtransProvider.refund", () => {
+describe("XenditProvider.refund", () => {
 	test("charge pending → REFUND_NOT_ALLOWED tanpa hit endpoint refund", async () => {
-		const client = new MockMidtransHttpClient();
-		client.statusTransactionStatus = "pending";
+		const client = new MockXenditHttpClient();
+		client.statusStatus = "PENDING";
 		const provider = makeProvider(client);
 		const created = await provider.createCharge(
 			chargeRequest("order-refund-pending"),
@@ -123,20 +131,22 @@ describe("MidtransProvider.refund", () => {
 				{ idempotencyKey: "refund-key-1" },
 			),
 		).rejects.toMatchObject({ code: "REFUND_NOT_ALLOWED" });
-		expect(client.requests.some((r) => /\/refund/.test(r.url))).toBe(false);
+		expect(client.requests.some((r) => r.url.includes("/refunds"))).toBe(false);
 	});
 
 	test("charge paid → full refund sukses", async () => {
-		const client = new MockMidtransHttpClient();
-		client.statusTransactionStatus = "settlement";
+		const client = new MockXenditHttpClient();
+		client.statusStatus = "SUCCEEDED";
 		client.refundStatusCode = 200;
 		client.refundBody = {
-			status_code: "200",
-			order_id: "order-refund-paid",
-			refund_amount: "10000.00",
-			refund_key: "refund-key-ok",
-			transaction_status: "refund",
-			transaction_time: "2024-02-01 09:00:00",
+			id: "rfd-refund-ok",
+			payment_request_id: "pr-mock-1",
+			amount: 10000,
+			currency: "IDR",
+			status: "SUCCEEDED",
+			reason: "REQUESTED_BY_CUSTOMER",
+			created: "2024-02-01T08:30:00Z",
+			updated: "2024-02-01T08:30:00Z",
 		};
 		const provider = makeProvider(client);
 		const created = await provider.createCharge(
@@ -148,23 +158,33 @@ describe("MidtransProvider.refund", () => {
 			{ idempotencyKey: "refund-key-2" },
 		);
 		expect(result.normalizedStatus).toBe("succeeded");
-		expect(result.refundId).toBe("refund-key-ok");
-		const refundUrl = client.requests.find((r) => /\/refund/.test(r.url));
-		expect(refundUrl?.url).toBe(
-			"https://api.sandbox.midtrans.com/v2/order-refund-paid/refund",
+		expect(result.refundId).toBe("rfd-refund-ok");
+		const refundRequest = client.requests.find((r) =>
+			r.url.includes("/refunds"),
 		);
+		expect(refundRequest?.url).toBe("https://api.xendit.co/refunds");
+		const body = JSON.parse(String(refundRequest?.init?.body)) as Record<
+			string,
+			unknown
+		>;
+		expect(body.payment_request_id).toBe(created.chargeId);
+		expect(body.reason).toBe("REQUESTED_BY_CUSTOMER");
+		expect(body.amount).toBeUndefined();
 	});
 
-	test("partial refund → URL refund/partial dengan refund_key = idempotencyKey", async () => {
-		const client = new MockMidtransHttpClient();
-		client.statusTransactionStatus = "settlement";
+	test("partial refund → amount dikirim", async () => {
+		const client = new MockXenditHttpClient();
+		client.statusStatus = "SUCCEEDED";
 		client.refundStatusCode = 200;
 		client.refundBody = {
-			status_code: "200",
-			order_id: "order-refund-partial",
-			refund_amount: "5000.00",
-			refund_key: "refund-key-3",
-			transaction_status: "refund",
+			id: "rfd-refund-partial",
+			payment_request_id: "pr-mock-1",
+			amount: 5000,
+			currency: "IDR",
+			status: "SUCCEEDED",
+			reason: "REQUESTED_BY_CUSTOMER",
+			created: "2024-02-01T08:30:00Z",
+			updated: "2024-02-01T08:30:00Z",
 		};
 		const provider = makeProvider(client);
 		const created = await provider.createCharge(
@@ -176,22 +196,29 @@ describe("MidtransProvider.refund", () => {
 			{ idempotencyKey: "refund-key-3" },
 		);
 		expect(result.amount).toBe(5000);
-		const refundUrl = client.requests.find((r) => /\/refund/.test(r.url));
-		expect(refundUrl?.url).toContain(
-			"/v2/order-refund-partial/refund/partial/refund-key-3",
+		const refundRequest = client.requests.find((r) =>
+			r.url.includes("/refunds"),
 		);
+		const body = JSON.parse(String(refundRequest?.init?.body)) as Record<
+			string,
+			unknown
+		>;
+		expect(body.amount).toBe(5000);
+		expect(body.reason).toBe("Seperti diuji");
 	});
 
 	test("idempotency refund sama + payload sama → refundId sama", async () => {
-		const client = new MockMidtransHttpClient();
-		client.statusTransactionStatus = "settlement";
+		const client = new MockXenditHttpClient();
+		client.statusStatus = "SUCCEEDED";
 		client.refundStatusCode = 200;
 		client.refundBody = {
-			status_code: "200",
-			order_id: "order-refund-idem",
-			refund_amount: "10000.00",
-			refund_key: "refund-key-same",
-			transaction_status: "refund",
+			id: "rfd-refund-idem",
+			payment_request_id: "pr-mock-1",
+			amount: 10000,
+			currency: "IDR",
+			status: "SUCCEEDED",
+			created: "2024-02-01T08:30:00Z",
+			updated: "2024-02-01T08:30:00Z",
 		};
 		const provider = makeProvider(client);
 		const created = await provider.createCharge(
@@ -207,14 +234,14 @@ describe("MidtransProvider.refund", () => {
 		});
 		expect(second.refundId).toBe(first.refundId);
 		const refundRequests = client.requests.filter((r) =>
-			/\/refund/.test(r.url),
+			r.url.includes("/refunds"),
 		);
 		expect(refundRequests).toHaveLength(1);
 	});
 
-	test("refund amount 0 → INVALID_REQUEST tanpa hit endpoint refund", async () => {
-		const client = new MockMidtransHttpClient();
-		client.statusTransactionStatus = "settlement";
+	test("refund amount 0 → INVALID_REQUEST tanpa hit /refunds", async () => {
+		const client = new MockXenditHttpClient();
+		client.statusStatus = "SUCCEEDED";
 		const provider = makeProvider(client);
 		const created = await provider.createCharge(
 			chargeRequest("order-refund-zero"),
@@ -226,12 +253,12 @@ describe("MidtransProvider.refund", () => {
 				{ idempotencyKey: "refund-key-zero" },
 			),
 		).rejects.toMatchObject({ code: "INVALID_REQUEST" });
-		expect(client.requests.some((r) => /\/refund/.test(r.url))).toBe(false);
+		expect(client.requests.some((r) => r.url.includes("/refunds"))).toBe(false);
 	});
 
 	test("refund amount negatif → INVALID_REQUEST", async () => {
-		const client = new MockMidtransHttpClient();
-		client.statusTransactionStatus = "settlement";
+		const client = new MockXenditHttpClient();
+		client.statusStatus = "SUCCEEDED";
 		const provider = makeProvider(client);
 		const created = await provider.createCharge(
 			chargeRequest("order-refund-negative"),
@@ -246,8 +273,8 @@ describe("MidtransProvider.refund", () => {
 	});
 
 	test("refund amount non-integer → INVALID_REQUEST", async () => {
-		const client = new MockMidtransHttpClient();
-		client.statusTransactionStatus = "settlement";
+		const client = new MockXenditHttpClient();
+		client.statusStatus = "SUCCEEDED";
 		const provider = makeProvider(client);
 		const created = await provider.createCharge(
 			chargeRequest("order-refund-fraction"),
@@ -261,9 +288,9 @@ describe("MidtransProvider.refund", () => {
 		).rejects.toMatchObject({ code: "INVALID_REQUEST" });
 	});
 
-	test("refund amount melebihi charge → REFUND_EXCEEDS_CHARGE_AMOUNT tanpa hit endpoint refund", async () => {
-		const client = new MockMidtransHttpClient();
-		client.statusTransactionStatus = "settlement";
+	test("refund amount melebihi charge → REFUND_EXCEEDS_CHARGE_AMOUNT tanpa hit /refunds", async () => {
+		const client = new MockXenditHttpClient();
+		client.statusStatus = "SUCCEEDED";
 		const provider = makeProvider(client);
 		const created = await provider.createCharge(
 			chargeRequest("order-refund-exceed"),
@@ -275,19 +302,21 @@ describe("MidtransProvider.refund", () => {
 				{ idempotencyKey: "refund-key-exceed" },
 			),
 		).rejects.toMatchObject({ code: "REFUND_EXCEEDS_CHARGE_AMOUNT" });
-		expect(client.requests.some((r) => /\/refund/.test(r.url))).toBe(false);
+		expect(client.requests.some((r) => r.url.includes("/refunds"))).toBe(false);
 	});
 
 	test("idempotency refund sama + payload beda → DUPLICATE_IDEMPOTENCY_KEY", async () => {
-		const client = new MockMidtransHttpClient();
-		client.statusTransactionStatus = "settlement";
+		const client = new MockXenditHttpClient();
+		client.statusStatus = "SUCCEEDED";
 		client.refundStatusCode = 200;
 		client.refundBody = {
-			status_code: "200",
-			order_id: "order-refund-conflict",
-			refund_amount: "10000.00",
-			refund_key: "refund-key-conflict",
-			transaction_status: "refund",
+			id: "rfd-refund-conflict",
+			payment_request_id: "pr-mock-1",
+			amount: 10000,
+			currency: "IDR",
+			status: "SUCCEEDED",
+			created: "2024-02-01T08:30:00Z",
+			updated: "2024-02-01T08:30:00Z",
 		};
 		const provider = makeProvider(client);
 		const created = await provider.createCharge(
@@ -296,48 +325,44 @@ describe("MidtransProvider.refund", () => {
 		);
 		await provider.refund(
 			{ chargeId: created.chargeId, amount: 5000 },
-			{
-				idempotencyKey: "refund-key-conflict",
-			},
+			{ idempotencyKey: "refund-key-conflict" },
 		);
 		await expect(
 			provider.refund(
 				{ chargeId: created.chargeId, amount: 9000 },
-				{
-					idempotencyKey: "refund-key-conflict",
-				},
+				{ idempotencyKey: "refund-key-conflict" },
 			),
 		).rejects.toMatchObject({ code: "DUPLICATE_IDEMPOTENCY_KEY" });
 	});
 });
 
-describe("MidtransProvider.parseWebhook", () => {
-	test("delegasi ke parseMidtransWebhook: valid", async () => {
-		const provider = makeProvider(new MockMidtransHttpClient());
-		const { payload } = await buildMidtransWebhook(
-			"order-wh",
+describe("XenditProvider.parseWebhook", () => {
+	test("delegasi ke parseXenditWebhook: valid", async () => {
+		const provider = makeProvider(new MockXenditHttpClient());
+		const { payload, headers } = buildXenditWebhook(
+			"pr-order-wh",
 			"paid",
-			MOCK_MIDTRANS_SERVER_KEY,
+			MOCK_XENDIT_CALLBACK_TOKEN,
 		);
-		const event = await provider.parseWebhook(payload, new Headers());
-		expect(event.chargeId).toBe("mock-event-order-wh");
+		const event = await provider.parseWebhook(payload, headers);
+		expect(event.chargeId).toBe("pr-order-wh");
 		expect(event.normalizedStatus).toBe("paid");
 	});
 
 	test("signature invalid → WEBHOOK_SIGNATURE_INVALID", async () => {
-		const provider = makeProvider(new MockMidtransHttpClient());
-		const { payload } = await buildInvalidMidtransWebhook(
-			MOCK_MIDTRANS_SERVER_KEY,
+		const provider = makeProvider(new MockXenditHttpClient());
+		const { payload, headers } = buildInvalidXenditWebhook(
+			MOCK_XENDIT_CALLBACK_TOKEN,
 		);
-		await expect(
-			provider.parseWebhook(payload, new Headers()),
-		).rejects.toMatchObject({ code: "WEBHOOK_SIGNATURE_INVALID" });
+		await expect(provider.parseWebhook(payload, headers)).rejects.toMatchObject(
+			{ code: "WEBHOOK_SIGNATURE_INVALID" },
+		);
 	});
 });
 
-describe("MidtransProvider.capturePayment", () => {
+describe("XenditProvider.capturePayment", () => {
 	test("tidak didukung → CAPTURE_NOT_SUPPORTED", async () => {
-		const provider = makeProvider(new MockMidtransHttpClient());
+		const provider = makeProvider(new MockXenditHttpClient());
 		await expect(provider.capturePayment("charge-1")).rejects.toMatchObject({
 			code: "CAPTURE_NOT_SUPPORTED",
 		});

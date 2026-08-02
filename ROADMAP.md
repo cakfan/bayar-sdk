@@ -69,23 +69,23 @@ Setiap task dirancang jadi unit kerja kecil (idealnya satu task = satu PR, satu 
 
 **(blocked by: 2.8, boleh paralel dengan Fase 3)**
 
-- [ ] **4.1** Buat `packages/provider-xendit/package.json` (nama `@bayar-sdk/xendit`).
-- [ ] **4.2** `mapper.ts`: `toXenditChargeRequest` untuk metode **Virtual Account**.
-- [ ] **4.3** `mapper.ts`: tambah metode **QRIS**.
-- [ ] **4.4** `mapper.ts`: tambah metode **E-wallet** (OVO/DANA/ShopeePay — satu fungsi, channel sebagai parameter).
-- [ ] **4.5** `mapper.ts`: tambah metode **Credit Card** (token-based).
-- [ ] **4.6** `mapper.ts`: `fromXenditResponse(raw): ChargeResult` — mapping status Xendit → `PaymentStatus`.
-- [ ] **4.7** `errors.ts` — mapping kode error Xendit → `PaymentErrorCode`.
-- [ ] **4.8** `webhook.ts` — fungsi `verifyXenditSignature(headers, expectedToken)` pakai constant-time comparison untuk `x-callback-token`. Unit test valid & invalid.
-- [ ] **4.9** `webhook.ts` — `parseXenditWebhook(payload, headers)`, verifikasi dulu baru normalisasi ke `WebhookEvent`.
-- [ ] **4.10** `adapter.ts` — class `XenditProvider implements PaymentProvider`, constructor `{ secretKey, httpClient }`. Implement `createCharge()`.
-- [ ] **4.11** Implement `getCharge()`.
-- [ ] **4.12** Implement `refund()` (wajib `idempotencyKey`, cek status dulu).
-- [ ] **4.13** Implement `parseWebhook()`.
-- [ ] **4.14** `index.ts` — export `XenditProvider`.
-- [ ] **4.15** Fixture response asli Xendit di `__fixtures__/`.
-- [ ] **4.16** Jalankan `runProviderContractTests()` untuk `XenditProvider`, perbaiki sampai lolos.
-- [ ] **4.17** Tulis `packages/provider-xendit/README.md`.
+- [x] **4.1** Buat `packages/provider-xendit/package.json` (nama `@bayar-sdk/xendit`).
+- [x] **4.2** `mapper.ts`: `toXenditChargeRequest` untuk metode **Virtual Account**.
+- [x] **4.3** `mapper.ts`: tambah metode **QRIS**.
+- [x] **4.4** `mapper.ts`: tambah metode **E-wallet** (OVO/DANA/ShopeePay — satu fungsi, channel sebagai parameter).
+- [x] **4.5** `mapper.ts`: tambah metode **Credit Card** (token-based).
+- [x] **4.6** `mapper.ts`: `fromXenditResponse(raw): ChargeResult` — mapping status Xendit → `PaymentStatus`.
+- [x] **4.7** `errors.ts` — mapping kode error Xendit → `PaymentErrorCode`.
+- [x] **4.8** `webhook.ts` — fungsi `verifyXenditSignature(headers, expectedToken)` pakai constant-time comparison untuk `x-callback-token`. Unit test valid & invalid.
+- [x] **4.9** `webhook.ts` — `parseXenditWebhook(payload, headers)`, verifikasi dulu baru normalisasi ke `WebhookEvent`.
+- [x] **4.10** `adapter.ts` — class `XenditProvider implements PaymentProvider`, constructor `{ secretKey, callbackToken, httpClient }`. Implement `createCharge()`.
+- [x] **4.11** Implement `getCharge()`.
+- [x] **4.12** Implement `refund()` (wajib `idempotencyKey`, cek status dulu).
+- [x] **4.13** Implement `parseWebhook()`.
+- [x] **4.14** `index.ts` — export `XenditProvider`.
+- [x] **4.15** Fixture response asli Xendit di `__fixtures__/`.
+- [x] **4.16** Jalankan `runProviderContractTests()` untuk `XenditProvider`, perbaiki sampai lolos.
+- [x] **4.17** Tulis `packages/provider-xendit/README.md`.
 
 ## Fase 5 — Hono middleware
 
