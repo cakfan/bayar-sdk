@@ -19,16 +19,16 @@ Setiap task dirancang jadi unit kerja kecil (idealnya satu task = satu PR, satu 
 
 **(blocked by: 0.4)**
 
-- [ ] **1.1** Buat `packages/core/src/types.ts` — definisikan `ChargeRequest`, `PaymentMethodInput` (discriminated union), sesuai `ARCHITECTURE.md` §3.1. Tanpa logic, hanya tipe.
-- [ ] **1.2** Tambah ke `types.ts`: `ChargeResult`, `PaymentStatus` enum, sesuai state machine di `ARCHITECTURE.md` §8.
-- [ ] **1.3** Tambah ke `types.ts`: `RefundRequest`, `RefundResult`.
-- [ ] **1.4** Tambah ke `types.ts`: `WebhookEvent`.
-- [ ] **1.5** Buat `packages/core/src/contract.ts` — interface `PaymentProvider` (method `createCharge`, `getCharge`, `refund`, `parseWebhook`, `capturePayment?`), import tipe dari `types.ts`.
-- [ ] **1.6** Buat `packages/core/src/errors.ts` — class `PaymentSDKError` + enum `PaymentErrorCode` sesuai `ARCHITECTURE.md` §4.1. Tambah util `isPaymentSDKError(err)` dan `isRetryable(err)`.
-- [ ] **1.7** Buat `packages/core/src/idempotency.ts` — util `assertIdempotencyKey(key: string): void` yang throw kalau key kosong/format tidak valid.
-- [ ] **1.8** Buat `packages/core/src/index.ts` — re-export semua public API dari `types.ts`, `contract.ts`, `errors.ts`, `idempotency.ts`.
-- [ ] **1.9** Unit test untuk `idempotency.ts` (`assertIdempotencyKey` reject string kosong, reject whitespace-only, accept string valid).
-- [ ] **1.10** Unit test untuk `errors.ts` (`isPaymentSDKError` type guard benar, `isRetryable` konsisten dengan flag `retryable`).
+- [x] **1.1** Buat `packages/core/src/types.ts` — definisikan `ChargeRequest`, `PaymentMethodInput` (discriminated union), sesuai `ARCHITECTURE.md` §3.1. Tanpa logic, hanya tipe.
+- [x] **1.2** Tambah ke `types.ts`: `ChargeResult`, `PaymentStatus` enum, sesuai state machine di `ARCHITECTURE.md` §8.
+- [x] **1.3** Tambah ke `types.ts`: `RefundRequest`, `RefundResult`.
+- [x] **1.4** Tambah ke `types.ts`: `WebhookEvent`.
+- [x] **1.5** Buat `packages/core/src/contract.ts` — interface `PaymentProvider` (method `createCharge`, `getCharge`, `refund`, `parseWebhook`, `capturePayment?`), import tipe dari `types.ts`.
+- [x] **1.6** Buat `packages/core/src/errors.ts` — class `PaymentSDKError` + enum `PaymentErrorCode` sesuai `ARCHITECTURE.md` §4.1. Tambah util `isPaymentSDKError(err)` dan `isRetryable(err)`.
+- [x] **1.7** Buat `packages/core/src/idempotency.ts` — util `assertIdempotencyKey(key: string): void` yang throw kalau key kosong/format tidak valid.
+- [x] **1.8** Buat `packages/core/src/index.ts` — re-export semua public API dari `types.ts`, `contract.ts`, `errors.ts`, `idempotency.ts`.
+- [x] **1.9** Unit test untuk `idempotency.ts` (`assertIdempotencyKey` reject string kosong, reject whitespace-only, accept string valid).
+- [x] **1.10** Unit test untuk `errors.ts` (`isPaymentSDKError` type guard benar, `isRetryable` konsisten dengan flag `retryable`).
 
 ## Fase 2 — Core: contract test suite
 
