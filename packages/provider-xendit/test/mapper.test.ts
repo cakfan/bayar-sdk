@@ -26,21 +26,21 @@ function baseRequest(overrides: Partial<ChargeRequest> = {}): ChargeRequest {
 }
 
 describe("toXenditChargeRequest", () => {
-	test("virtual_account → VIRTUAL_ACCOUNT dengan bank_code uppercase", () => {
+	test("virtual_account → channel_code bank uppercase", () => {
 		const body = toXenditChargeRequest(
 			baseRequest({
 				paymentMethod: { type: "virtual_account", bank: "bca" },
 			}),
 		);
-		expect(body.payment_method.type).toBe("VIRTUAL_ACCOUNT");
-		if (body.payment_method.type === "VIRTUAL_ACCOUNT") {
-			expect(body.payment_method.virtual_account.bank_code).toBe("BCA");
-		}
+		expect(body.channel_code).toBe("BCA");
+		expect(body.channel_properties).toEqual({});
+		expect(body.payment_token_id).toBeUndefined();
 		expect(body.reference_id).toBe("order-001");
-		expect(body.amount).toBe(10000);
+		expect(body.request_amount).toBe(10000);
 		expect(body.currency).toBe("IDR");
 		expect(body.country).toBe("ID");
 		expect(body.capture_method).toBe("AUTOMATIC");
+		expect(JSON.stringify(body)).not.toContain("payment_method");
 	});
 
 	test("virtual_account bank tidak dikenal → INVALID_REQUEST", () => {
@@ -53,40 +53,31 @@ describe("toXenditChargeRequest", () => {
 		).toThrow(PaymentSDKError);
 	});
 
-	test("qris → QR_CODE tipe DYNAMIC", () => {
+	test("qris → channel_code QRIS dengan qr_string_type DYNAMIC", () => {
 		const body = toXenditChargeRequest(
 			baseRequest({ paymentMethod: { type: "qris" } }),
 		);
-		expect(body.payment_method.type).toBe("QR_CODE");
-		if (body.payment_method.type === "QR_CODE") {
-			expect(body.payment_method.qr_code.type).toBe("DYNAMIC");
-		}
+		expect(body.channel_code).toBe("QRIS");
+		expect(body.channel_properties).toEqual({ qr_string_type: "DYNAMIC" });
 	});
 
 	test("ewallet channel dipetakan ke channel_code Xendit", () => {
 		const ovo = toXenditChargeRequest(
 			baseRequest({ paymentMethod: { type: "ewallet", channel: "OVO" } }),
 		);
-		expect(ovo.payment_method.type).toBe("EWALLET");
-		if (ovo.payment_method.type === "EWALLET") {
-			expect(ovo.payment_method.ewallet.channel_code).toBe("OVO");
-		}
+		expect(ovo.channel_code).toBe("OVO");
 
 		const dana = toXenditChargeRequest(
 			baseRequest({ paymentMethod: { type: "ewallet", channel: "DANA" } }),
 		);
-		if (dana.payment_method.type === "EWALLET") {
-			expect(dana.payment_method.ewallet.channel_code).toBe("DANA");
-		}
+		expect(dana.channel_code).toBe("DANA");
 
 		const shopeepay = toXenditChargeRequest(
 			baseRequest({
 				paymentMethod: { type: "ewallet", channel: "shopeepay" },
 			}),
 		);
-		if (shopeepay.payment_method.type === "EWALLET") {
-			expect(shopeepay.payment_method.ewallet.channel_code).toBe("SHOPEEPAY");
-		}
+		expect(shopeepay.channel_code).toBe("SHOPEEPAY");
 	});
 
 	test("ewallet channel tidak dikenal → INVALID_REQUEST", () => {
@@ -97,14 +88,13 @@ describe("toXenditChargeRequest", () => {
 		).toThrow(PaymentSDKError);
 	});
 
-	test("card → CARD memakai token_id, bukan raw card data", () => {
+	test("card → payment_token_id, bukan raw card data", () => {
 		const body = toXenditChargeRequest(
 			baseRequest({ paymentMethod: { type: "card", token: "token-abc-123" } }),
 		);
-		expect(body.payment_method.type).toBe("CARD");
-		if (body.payment_method.type === "CARD") {
-			expect(body.payment_method.card.token_id).toBe("token-abc-123");
-		}
+		expect(body.channel_code).toBe("CARDS");
+		expect(body.payment_token_id).toBe("token-abc-123");
+		expect(body.channel_properties).toBeUndefined();
 		expect(JSON.stringify(body)).not.toContain("card_number");
 		expect(JSON.stringify(body)).not.toContain("cvv");
 	});
@@ -174,25 +164,25 @@ describe("fromXenditResponse", () => {
 		).toThrow(PaymentSDKError);
 	});
 
-	test("payment_method type tidak dikenal → INVALID_REQUEST", () => {
+	test("channel_code tidak dikenal → INVALID_REQUEST", () => {
 		expect(() =>
 			fromXenditResponse({
 				id: "pr-1",
 				reference_id: "o-1",
 				status: "PENDING",
-				amount: 10000,
-				payment_method: { type: "PAYLATER" },
+				request_amount: 10000,
+				channel_code: "PAYLATER",
 			}),
 		).toThrow(PaymentSDKError);
 	});
 
-	test("amount berupa string tetap integer minor unit", () => {
+	test("request_amount berupa string tetap integer minor unit", () => {
 		const result = fromXenditResponse({
 			id: "pr-1",
 			reference_id: "o-1",
 			status: "PENDING",
-			amount: "15000",
-			payment_method: { type: "QR_CODE" },
+			request_amount: "15000",
+			channel_code: "QRIS",
 		});
 		expect(result.amount).toBe(15000);
 	});

@@ -22,7 +22,7 @@ import type { ChargeRequest, RefundRequest } from "@bayar-sdk/core";
 
 const provider = new XenditProvider({
 	secretKey: process.env.XENDIT_SECRET_KEY,
-	callbackToken: process.env.XENDIT_CALLBACK_VERIFICATION_TOKEN,
+	callbackToken: process.env.XENDIT_CALLBACK_TOKEN,
 	httpClient: { fetch }, // inject httpClient agar mudah di-mock/test
 });
 
@@ -88,18 +88,23 @@ app.post("/webhook/xendit", async (c) => {
 `parseWebhook` membaca header `x-callback-token` dan membandingkannya dengan
 `callbackToken` yang dikonfigurasi di dashboard Xendit.
 
+> **Ambil callback token di**: Dashboard Xendit → **Settings → Webhook**
+> (section Callbacks) → klik **"View Webhook Verification Token"** (masukkan
+> password). URL langsung: `https://dashboard.xendit.co/settings/developers#callbacks`.
+> Token unik per akun dan berlaku untuk test & live.
+
 ## Metode pembayaran yang didukung (v1)
 
-| Metode SDK            | `payment_method.type` Xendit |
-| --------------------- | ---------------------------- |
-| `virtual_account`     | `VIRTUAL_ACCOUNT`            |
-| `qris`                | `QR_CODE`                    |
-| `ewallet`             | `EWALLET`                    |
-| `card` (token-based)  | `CARD`                       |
+| Metode SDK           | `channel_code` Xendit |
+| -------------------- | --------------------- |
+| `virtual_account`    | `BCA`, `BNI`, `BRI`, `MANDIRI`, `PERMATA`, `CIMB`, `BSI`, `DANAMON`, `SEABANK`, `SAQU` |
+| `qris`               | `QRIS`                |
+| `ewallet`            | `OVO`, `DANA`, `SHOPEEPAY`, `GOJEK`, `LINKAJA` |
+| `card` (token-based) | `CARDS`               |
 
 Bank virtual account yang didukung: `bca`, `bni`, `bri`, `mandiri`, `permata`,
 `cimb`, `bsi`, `danamon`, `seabank`, `saqu` (input dinormalisasi ke lowercase,
-dipetakan ke `bank_code` Xendit uppercase; bank lain melempar `INVALID_REQUEST`).
+dipetakan ke `channel_code` Xendit uppercase; bank lain melempar `INVALID_REQUEST`).
 
 Channel e-wallet yang didukung: `ovo`, `dana`, `shopeepay`, `gopay` (channel code
 `GOJEK`), `linkaja` (channel lain melempar `INVALID_REQUEST`).

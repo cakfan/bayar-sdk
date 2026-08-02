@@ -216,12 +216,12 @@ konsisten `{ error: { code, message, provider, providerErrorCode, retryable } }`
 
 ## Matriks dukungan provider (v1)
 
-| Metode SDK | Midtrans (`payment_type`) | Xendit (`payment_method.type`) |
+| Metode SDK | Midtrans (`payment_type`) | Xendit (`channel_code`) |
 | --- | --- | --- |
-| `virtual_account` | `bank_transfer` | `VIRTUAL_ACCOUNT` |
-| `qris` | `qris` | `QR_CODE` |
-| `ewallet` | `gopay` | `EWALLET` |
-| `card` (token-based) | `credit_card` | `CARD` |
+| `virtual_account` | `bank_transfer` | `BCA`, `BNI`, `BRI`, dll. |
+| `qris` | `qris` | `QRIS` |
+| `ewallet` | `gopay` | `OVO`, `DANA`, `SHOPEEPAY`, `GOJEK`, `LINKAJA` |
+| `card` (token-based) | `credit_card` | `CARDS` |
 
 Bank virtual account yang didukung (kedua provider): `bca`, `bni`, `bri`,
 `permata`, `mandiri`, `cimb`, `danamon`, `bsi`, `seabank`, `saqu`.

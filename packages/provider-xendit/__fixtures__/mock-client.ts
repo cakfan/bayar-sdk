@@ -9,9 +9,9 @@ function jsonResponse(status: number, body: unknown): Response {
 
 interface MockChargeBody {
 	reference_id?: string;
-	amount?: number;
+	request_amount?: number;
 	currency?: string;
-	payment_method?: { type?: string; [key: string]: unknown };
+	channel_code?: string;
 	[key: string]: unknown;
 }
 
@@ -35,17 +35,18 @@ export class MockXenditHttpClient implements HttpClient {
 		body: MockChargeBody,
 		status: string,
 	): Record<string, unknown> {
+		const channelCode = body.channel_code ?? "QRIS";
 		return {
 			payment_request_id: prId,
 			reference_id: body.reference_id ?? prId,
 			business_id: "mock-business-xxxx",
 			currency: body.currency ?? "IDR",
-			amount: body.amount ?? 10000,
+			request_amount: body.request_amount ?? 10000,
 			country: "ID",
 			status,
-			payment_method: body.payment_method ?? { type: "QR_CODE" },
+			channel_code: channelCode,
 			actions:
-				body.payment_method?.type === "QR_CODE"
+				channelCode === "QRIS"
 					? [
 							{
 								type: "PRESENT_TO_CUSTOMER",

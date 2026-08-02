@@ -8,15 +8,10 @@ export const chargePendingVA: XenditPaymentRequest = {
 	reference_id: "order-va-pending-001",
 	business_id: "mock-business-xxxx",
 	currency: "IDR",
-	amount: 15000,
+	request_amount: 15000,
 	country: "ID",
 	status: "PENDING",
-	payment_method: {
-		id: "pm-va-001",
-		type: "VIRTUAL_ACCOUNT",
-		reusability: "ONE_TIME_USE",
-		virtual_account: { bank_code: "BCA" },
-	},
+	channel_code: "BCA",
 	actions: [
 		{
 			type: "PRESENT_TO_CUSTOMER",
@@ -36,15 +31,10 @@ export const chargePendingQRIS: XenditPaymentRequest = {
 	reference_id: "order-qris-pending-001",
 	business_id: "mock-business-xxxx",
 	currency: "IDR",
-	amount: 25000,
+	request_amount: 25000,
 	country: "ID",
 	status: "PENDING",
-	payment_method: {
-		id: "pm-qris-001",
-		type: "QR_CODE",
-		reusability: "ONE_TIME_USE",
-		qr_code: { type: "DYNAMIC" },
-	},
+	channel_code: "QRIS",
 	actions: [
 		{
 			type: "PRESENT_TO_CUSTOMER",
@@ -64,15 +54,10 @@ export const chargePendingEwallet: XenditPaymentRequest = {
 	reference_id: "order-ovo-pending-001",
 	business_id: "mock-business-xxxx",
 	currency: "IDR",
-	amount: 35000,
+	request_amount: 35000,
 	country: "ID",
 	status: "REQUIRES_ACTION",
-	payment_method: {
-		id: "pm-ovo-001",
-		type: "EWALLET",
-		reusability: "ONE_TIME_USE",
-		ewallet: { channel_code: "OVO" },
-	},
+	channel_code: "OVO",
 	actions: [
 		{
 			type: "REDIRECT_CUSTOMER",
@@ -89,15 +74,10 @@ export const chargePaid: XenditPaymentRequest = {
 	reference_id: "order-paid-001",
 	business_id: "mock-business-xxxx",
 	currency: "IDR",
-	amount: 50000,
+	request_amount: 50000,
 	country: "ID",
 	status: "SUCCEEDED",
-	payment_method: {
-		id: "pm-card-001",
-		type: "CARD",
-		reusability: "ONE_TIME_USE",
-		card: { token_id: "tok-abc-123" },
-	},
+	channel_code: "CARDS",
 	created: "2024-02-01T07:00:00Z",
 	updated: "2024-02-01T08:00:00Z",
 };

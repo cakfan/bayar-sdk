@@ -33,38 +33,39 @@ export const XENDIT_EWALLET_CHANNELS: ReadonlyMap<string, string> = new Map([
 	["linkaja", "LINKAJA"],
 ]);
 
-export type XenditPaymentMethod =
-	| {
-			type: "VIRTUAL_ACCOUNT";
-			reusability: "ONE_TIME_USE";
-			virtual_account: { bank_code: string };
-	  }
-	| {
-			type: "QR_CODE";
-			reusability: "ONE_TIME_USE";
-			qr_code: { type: "DYNAMIC" };
-	  }
-	| {
-			type: "EWALLET";
-			reusability: "ONE_TIME_USE";
-			ewallet: { channel_code: string };
-	  }
-	| {
-			type: "CARD";
-			reusability: "ONE_TIME_USE";
-			card: { token_id: string };
-	  };
-
+// Body request Payment Request API (schema Payments_API_Pay / PayWithToken).
+// Field di level atas: `request_amount`, `channel_code`, `channel_properties`
+// (bukan objek `payment_method` seperti di versi API lama).
 export interface XenditChargeBody {
 	reference_id: string;
-	amount: number;
-	currency: string;
-	country?: string;
 	type: "PAY";
+	country?: string;
+	currency: string;
+	request_amount: number;
 	capture_method: "AUTOMATIC";
-	payment_method: XenditPaymentMethod;
+	channel_code: string;
+	channel_properties?: Record<string, unknown>;
+	payment_token_id?: string;
 	description?: string;
 	metadata?: Record<string, string>;
+}
+
+// `channel_code` Xendit (paling umum untuk ID) → PaymentMethodInput SDK.
+export const XENDIT_QRIS_CHANNEL_CODE = "QRIS";
+export const XENDIT_CARD_CHANNEL_CODE = "CARDS";
+
+export function channelCodeToMethod(
+	channelCode: string,
+): PaymentMethodInput["type"] | undefined {
+	if (channelCode === XENDIT_QRIS_CHANNEL_CODE) return "qris";
+	if (channelCode === XENDIT_CARD_CHANNEL_CODE) return "card";
+	if ([...XENDIT_VA_BANK_CODES.values()].includes(channelCode)) {
+		return "virtual_account";
+	}
+	if ([...XENDIT_EWALLET_CHANNELS.values()].includes(channelCode)) {
+		return "ewallet";
+	}
+	return undefined;
 }
 
 function invalidRequest(message: string): PaymentSDKError {
@@ -79,7 +80,7 @@ export function toXenditChargeRequest(req: ChargeRequest): XenditChargeBody {
 	const currency = req.currency.toUpperCase();
 	const base = {
 		reference_id: req.referenceId,
-		amount: req.amount,
+		request_amount: req.amount,
 		currency,
 		...(currency === "IDR" ? { country: "ID" } : {}),
 		type: "PAY" as const,
@@ -99,21 +100,15 @@ export function toXenditChargeRequest(req: ChargeRequest): XenditChargeBody {
 			}
 			return {
 				...base,
-				payment_method: {
-					type: "VIRTUAL_ACCOUNT",
-					reusability: "ONE_TIME_USE",
-					virtual_account: { bank_code: bankCode },
-				},
+				channel_code: bankCode,
+				channel_properties: {},
 			};
 		}
 		case "qris":
 			return {
 				...base,
-				payment_method: {
-					type: "QR_CODE",
-					reusability: "ONE_TIME_USE",
-					qr_code: { type: "DYNAMIC" },
-				},
+				channel_code: XENDIT_QRIS_CHANNEL_CODE,
+				channel_properties: { qr_string_type: "DYNAMIC" },
 			};
 		case "ewallet": {
 			const channel = req.paymentMethod.channel.toLowerCase();
@@ -125,21 +120,15 @@ export function toXenditChargeRequest(req: ChargeRequest): XenditChargeBody {
 			}
 			return {
 				...base,
-				payment_method: {
-					type: "EWALLET",
-					reusability: "ONE_TIME_USE",
-					ewallet: { channel_code: channelCode },
-				},
+				channel_code: channelCode,
+				channel_properties: {},
 			};
 		}
 		case "card":
 			return {
 				...base,
-				payment_method: {
-					type: "CARD",
-					reusability: "ONE_TIME_USE",
-					card: { token_id: req.paymentMethod.token },
-				},
+				channel_code: XENDIT_CARD_CHANNEL_CODE,
+				payment_token_id: req.paymentMethod.token,
 			};
 	}
 }
@@ -149,13 +138,10 @@ export interface XenditPaymentRequest {
 	id?: string;
 	reference_id?: string;
 	currency?: string;
-	amount?: string | number;
+	request_amount?: string | number;
 	country?: string;
 	status?: string;
-	payment_method?: {
-		type?: string;
-		[key: string]: unknown;
-	};
+	channel_code?: string;
 	actions?: Array<{
 		type?: string;
 		descriptor?: string;
@@ -201,16 +187,6 @@ const PAYMENT_REQUEST_STATUS_TO_PAYMENT_STATUS: Record<string, PaymentStatus> =
 export function mapPaymentRequestStatus(raw: string): PaymentStatus {
 	return PAYMENT_REQUEST_STATUS_TO_PAYMENT_STATUS[raw] ?? "unknown";
 }
-
-const PAYMENT_METHOD_TYPE_TO_METHOD: Record<
-	string,
-	PaymentMethodInput["type"]
-> = {
-	VIRTUAL_ACCOUNT: "virtual_account",
-	QR_CODE: "qris",
-	EWALLET: "ewallet",
-	CARD: "card",
-};
 
 export function parseAmount(
 	value: string | number | undefined,
@@ -260,19 +236,17 @@ export function fromXenditResponse(raw: unknown): ChargeResult {
 		);
 	}
 	const response = raw as XenditPaymentRequest;
-	const amount = parseAmount(response.amount);
+	const amount = parseAmount(response.request_amount);
 	if (amount === undefined) {
-		throw invalidRequest("Xendit response is missing amount");
+		throw invalidRequest("Xendit response is missing request_amount");
 	}
 
-	const paymentMethodType = response.payment_method?.type;
+	const channelCode = response.channel_code;
 	const paymentMethod =
-		paymentMethodType === undefined
-			? undefined
-			: PAYMENT_METHOD_TYPE_TO_METHOD[paymentMethodType];
+		channelCode === undefined ? undefined : channelCodeToMethod(channelCode);
 	if (paymentMethod === undefined) {
 		throw invalidRequest(
-			`Unsupported Xendit payment_method type: ${paymentMethodType ?? "(missing)"}`,
+			`Unsupported Xendit channel_code: ${channelCode ?? "(missing)"}`,
 		);
 	}
 

@@ -13,7 +13,6 @@ export {
 	XENDIT_EWALLET_CHANNELS,
 	XENDIT_VA_BANK_CODES,
 	type XenditChargeBody,
-	type XenditPaymentMethod,
 	type XenditPaymentRequest,
 	type XenditRefundResponse,
 } from "./mapper";

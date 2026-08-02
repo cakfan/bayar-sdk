@@ -13,6 +13,7 @@ export interface XenditWebhookPayload {
 		reference_id?: string;
 		status?: string;
 		amount?: string | number;
+		request_amount?: string | number;
 		currency?: string;
 		updated?: string;
 		[key: string]: unknown;
@@ -118,7 +119,7 @@ export async function parseXenditWebhook(
 		chargeId: data?.payment_request_id ?? "",
 		status,
 		normalizedStatus: mapWebhookNormalizedStatus(payload),
-		amount: parseAmount(data?.amount),
+		amount: parseAmount(data?.amount ?? data?.request_amount),
 		timestamp,
 		rawPayload: payload,
 	};
