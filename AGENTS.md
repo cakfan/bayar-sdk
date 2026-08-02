@@ -61,6 +61,25 @@ Setiap task yang menyentuh mapping status provider wajib menguji hasilnya konsis
 - Sebelum membuka PR: jalankan `bun test`, `bunx tsc --noEmit`, dan `bunx biome check .` — semua harus hijau.
 - Jangan publish ke npm dari lokal. Publish hanya lewat CI (lihat `ARCHITECTURE.md` §10).
 
-## 6. Kalau ragu
+## 6. Versioning
+
+- Versi mengikuti **SemVer** `MAJOR.MINOR.PATCH`, plus suffix pre-release
+  (`-alpha.N`, `-beta.N`, `-rc.N`). Sebelum `1.0.0`, breaking change cukup naik
+  `minor`.
+- **Perubahan contract publik core** (`contract.ts`, `types.ts`, `errors.ts`)
+  wajib dibump sebagai `major` (atau `minor` sebelum `1.0.0`) — tidak pernah
+  `patch`. Pilih level bump `major` di changeset-nya.
+- **Jangan menaikkan versi `package.json` secara manual.** Versi hanya berubah
+  lewat `bunx changeset version` agar range dependency internal antar package
+  selalu konsisten (lihat `CONTRIBUTING.md` → Versioning).
+- Rilis pre-release memakai changesets pre mode: `bunx changeset pre enter <tag>`
+  (`alpha`/`beta`/`rc`), berlaku global ke semua package. Keluar pre mode dengan
+  `bunx changeset pre exit`, lalu `bunx changeset version` untuk rilis stable.
+- Pre-release di-publish ke **dist-tag npm sesuai channel** (`beta`, `rc`, dst),
+  bukan `latest` — CI mendeteksi channel otomatis dari `.changeset/pre.json`.
+- Publish hanya lewat CI. Jangan pernah `npm publish`/`changeset publish` dari
+  lokal, termasuk untuk pre-release.
+
+## 7. Kalau ragu
 
 Kalau sebuah task ambigu, kontradiktif dengan `ARCHITECTURE.md`, atau butuh keputusan produk baru (misal: dukungan metode pembayaran yang belum ada di `PRD.md`) — **berhenti, jangan menebak**. Tulis catatan singkat di PR description atau tanyakan langsung ke maintainer. Menebak dan lanjut coding adalah pelanggaran prinsip *design before development* proyek ini.
