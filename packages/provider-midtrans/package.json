@@ -1,7 +1,28 @@
 {
 	"name": "@bayar-sdk/midtrans",
-	"version": "0.0.0",
-	"description": "Midtrans provider adapter for bayar-sdk",
+	"version": "0.0.1",
+	"description": "Midtrans provider adapter for bayar-sdk — create charges, check status, refund and verify webhooks for Midtrans Core API (bank transfer, virtual account, QRIS, GoPay, e-wallet, credit card).",
+	"keywords": [
+		"midtrans",
+		"veritrans",
+		"payment",
+		"payment-gateway",
+		"sdk",
+		"core-api",
+		"virtual-account",
+		"bank-transfer",
+		"qris",
+		"gopay",
+		"e-wallet",
+		"credit-card",
+		"indonesia",
+		"typescript"
+	],
+	"homepage": "https://github.com/cakfan/bayar-sdk/blob/main/packages/provider-midtrans/README.md",
+	"bugs": {
+		"url": "https://github.com/cakfan/bayar-sdk/issues"
+	},
+	"author": "cakfan",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
@@ -36,7 +57,7 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"@bayar-sdk/core": "^0.0.0"
+		"@bayar-sdk/core": "^0.0.1"
 	},
 	"devDependencies": {
 		"@types/bun": "^1.3.14",

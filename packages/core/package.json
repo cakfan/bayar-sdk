@@ -1,7 +1,27 @@
 {
 	"name": "@bayar-sdk/core",
-	"version": "0.0.0",
-	"description": "Core types, contract, errors, and shared contract test suite for bayar-sdk",
+	"version": "0.0.1",
+	"description": "Core contract, types, errors and provider contract tests for bayar-sdk — an unofficial multi-provider payment gateway SDK (TypeScript) for Midtrans & Xendit.",
+	"keywords": [
+		"payment",
+		"payment-gateway",
+		"payment-sdk",
+		"sdk",
+		"midtrans",
+		"xendit",
+		"charge",
+		"refund",
+		"webhook",
+		"virtual-account",
+		"qris",
+		"e-wallet",
+		"typescript"
+	],
+	"homepage": "https://github.com/cakfan/bayar-sdk/blob/main/packages/core/README.md",
+	"bugs": {
+		"url": "https://github.com/cakfan/bayar-sdk/issues"
+	},
+	"author": "cakfan",
 	"license": "MIT",
 	"repository": {
 		"type": "git",

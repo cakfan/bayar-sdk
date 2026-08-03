@@ -1,7 +1,28 @@
 {
 	"name": "@bayar-sdk/xendit",
-	"version": "0.0.1",
-	"description": "Xendit provider adapter for bayar-sdk",
+	"version": "0.0.2",
+	"description": "Xendit provider adapter for bayar-sdk — create charges, check status, refund and verify webhooks via Xendit Payment Request API (virtual account, QRIS, OVO, DANA, ShopeePay, credit card).",
+	"keywords": [
+		"xendit",
+		"payment",
+		"payment-gateway",
+		"sdk",
+		"payment-request-api",
+		"virtual-account",
+		"qris",
+		"ovo",
+		"dana",
+		"shopeepay",
+		"e-wallet",
+		"credit-card",
+		"indonesia",
+		"typescript"
+	],
+	"homepage": "https://github.com/cakfan/bayar-sdk/blob/main/packages/provider-xendit/README.md",
+	"bugs": {
+		"url": "https://github.com/cakfan/bayar-sdk/issues"
+	},
+	"author": "cakfan",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
@@ -36,7 +57,7 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"@bayar-sdk/core": "^0.0.0"
+		"@bayar-sdk/core": "^0.0.1"
 	},
 	"devDependencies": {
 		"@types/bun": "^1.3.14",
